@@ -1,0 +1,92 @@
+{
+  "type": "object",
+  "properties": {
+    "interval": {
+      "title": "Interval between notification updates in seconds (0 is once upon plugin starts)",
+      "type": "number",
+      "minimum": 0,
+      "default": 600
+    },
+    "root": {
+      "type": "string",
+      "title": "Path under which to place computed keys",
+      "default": "environment.sunphases."
+    },
+    "notifications": {
+      "type": "array",
+      "title": "Notifications",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rangelo": {
+            "type": "string",
+            "title": "Start time"
+          },
+          "rangehi": {
+            "type": "string",
+            "title": "End time"
+          },
+          "inrangenotification": {
+            "title": "In-range notification",
+            "type": "object",
+            "properties": {
+              "path": {
+                "title": "Path",
+                "type": "string"
+              },
+              "state": {
+                "title": "State",
+                "type": "string",
+                "default": "normal",
+                "enum": [ "normal", "alert", "warn", "alarm", "emergency" ]
+              },
+              "method": {
+                "title": "Methods",
+                "type": "array",
+                "default": [],
+                "items": {
+                  "type": "string",
+                  "enum": [ "visual", "sound" ]
+                },
+                "uniqueItems": true
+              }
+            },
+            "required": [ "path" ]
+          },
+          "outrangenotification": {
+            "title": "Out-of-range notification",
+            "type": "object",
+            "properties": {
+              "path": {
+                "title": "Path",
+                "type": "string"
+              },
+              "state": {
+                "title": "State",
+                "type": "string",
+                "default": "normal",
+                "enum": [ "normal", "alert", "warn", "alarm", "emergency" ]
+              },
+              "method": {
+                "title": "Methods",
+                "type": "array",
+                "default": [],
+                "items": {
+                    "type": "string",
+                    "enum": [ "visual", "sound" ]
+                },
+                "uniqueItems": true
+              }
+            },
+            "required": [ "path" ]
+          }
+        },
+        "required": [ "rangelo", "rangehi" ]
+      },
+      "default": [
+        { "rangelo": "dawn", "rangehi": "dusk", "inrangenotification": { "path": "notifications.daytime" }, "outrangenotification": { "path": "notifications.nighttime" } }
+      ]
+    }
+  },
+  "required": [ "interval", "keypath", "notifications" ]
+}

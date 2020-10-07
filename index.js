@@ -1,0 +1,193 @@
+/**
+ * Copyright 2020 Paul Reeve <paul@pdjr.eu>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const fs = require('fs');
+const bacon = require('baconjs');
+const suncalc = require('suncalc');
+const Log = require("./lib/signalk-liblog/Log.js");
+const DebugLog = require("./lib/signalk-liblog/DebugLog.js");
+
+const PLUGIN_SCHEMA_FILE = __dirname + "/schema.json";
+const PLUGIN_UISCHEMA_FILE = __dirname + "/uischema.json";
+const DEFAULT_OPTIONS_INTERVAL = 600;
+const DEFAULT_OPTIONS_ROOT = "environment.sunphases";
+
+module.exports = function (app) {
+  var plugin = {};
+  var unsubscribes = [];
+
+  plugin.id = 'sunphases';
+  plugin.name = 'Sunlight phase calculator';
+  plugin.description = 'Inject sunlight phase paths into Signal K';
+
+  const log = new Log(plugin.id, { ncallback: app.setProviderStatus, ecallback: app.setProviderError });
+  const debug = new DebugLog(plugin.id, [ "keys", "notifications" ]);
+
+  plugin.schema = function() {
+    var retval = {};
+    try { retval = fs.readFileSync(PLUGIN_SCHEMA_FILE, 'utf8'); } catch(e) { log.E("bad or missing schema file '" + PLUGIN_SCHEMA_FILE + "'"); }
+    return(JSON.parse(retval));
+  }
+
+  plugin.uiSchema = function() {
+    var retval = {};
+    try { retval = fs.readFileSync(PLUGIN_UISCHEMA_FILE, 'utf8'); } catch(e) { }
+    return(JSON.parse(retval));
+  }
+
+  plugin.start = function(options) {
+    if ((!options) || (Object.keys(options).length == 0)) {
+      options = { "interval": DEFAULT_OPTIONS_INTERVAL, "root": DEFAULT_OPTIONS_ROOT, "notifications": [] };
+      log.W("using built-in defaults " + JSON.stringify(options));
+    }
+    options.root = options.root.trim().replace(/^\.+|\.+$/g,'') + ".";
+     
+    log.N("updating " + options.root + " every " + options.interval + " seconds");
+    debug.N("*", "available debug tokens: %s", debug.getKeys().join(", "));
+
+    var positionStream = app.streambundle.getSelfStream("navigation.position");
+    positionStream = (options.interval == 0)?positionStream.take(1):positionStream.debounceImmediate(options.interval * 1000);
+
+    unsubscribes.push(
+      positionStream.onValue(position => {
+        var now = new Date();
+        var today = dayOfYear(now);
+        var deltas = [];
+
+        if ((!options.lastupdateday) || (options.lastupdateday != today)) {
+          options.times = suncalc.getTimes(now, position.latitude, position.longitude);
+          log.N("updating " + Object.keys(options.times).length + " keys under " + options.root);
+          Object.keys(options.times).forEach(k => {
+            deltas.push({ "path": options.root + k, "value": options.times[k].toISOString() });
+            debug.N("keys", "key '%s' = '%s'", k, options.times[k].toISOString());
+          });
+          app.handleMessage(plugin.id, makeDelta(plugin.id, deltas));
+          options.lastupdateday = today;
+        }
+
+        if ((options.times) && (options.notifications.length)) {
+          var notificationUpdateCount = 0;
+          options.notifications.forEach(notification => {
+            try {
+              now = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
+              var start = parseTimeString(notification.rangelo, options.times);
+              var end = parseTimeString(notification.rangehi, options.times);
+              if ((now > start) && (now < end)) {
+                if (notification.inrangenotification.path && (!notification.actioned || (notification.actioned != 1))) {
+                  deltas.push({
+                    "path": notification.inrangenotification.path,
+                    "value": {
+                      "message": "Between " + notification.rangelo + " and " + notification.rangehi,
+                      "state": notification.inrangenotification.state || "normal",
+                      "method": notification.inrangenotification.method || []
+                    }
+                  });
+                  deltas.push({ "path": notification.outrangenotification.path, "value": null });
+                  notification.actioned = 1;
+                  notificationUpdateCount++;
+                  debug.N("notifications", "issuing %s, cancelling %s", notification.inrangenotification.path, notification.outrangenotification.path);
+                }
+              } else {
+                if (notification.outrangenotification.path && (!notification.actioned || (notification.action  != -1))) {
+                  deltas.push({
+                    "path": notification.outrangenotification.path,
+                    "value": {
+                      "message": "Outside " + notification.rangelo + " and " + notification.rangehi,
+                      "state": notification.outrangenotification.state || "normal",
+                      "method": notification.outrangenotification.method || []
+                    }
+                  });
+                  deltas.push({ "path": notification.inrangenotification.path, "value": null });
+                  notification.actioned = -1;
+                  notificationUpdateCount++;
+                  debug.N("notifications", "issuing %s, cancelling %s", notification.outrangenotification.path, notification.inrangenotification.path);
+                }
+              }              
+            } catch(e) {
+              log.E(e);
+            }
+          });
+        }
+        if (deltas.length) app.handleMessage(plugin.id, makeDelta(plugin.id, deltas));
+      })
+    );
+  }
+
+  plugin.stop = function () {
+    plugin.unsubscribes.forEach(f => f())
+  }
+
+  /******************************************************************
+   * Return a delta from <pairs> which can be a single value of the
+   * form { path, value } or an array of such values.
+   */
+
+  function makeDelta(pluginId, pairs) {
+    pairs = (Array.isArray(pairs))?pairs:[pairs]; 
+    return({
+      "updates": [
+        {
+          "source": { "type": "plugin", "src": pluginId, },
+          "timestamp": (new Date()).toISOString(),
+          "values": pairs.map(p => { return({ "path": p.path, "value": p.value }); }) 
+        }
+      ]
+    });
+  }
+
+  function dayOfYear(date){
+    return (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(date.getFullYear(), 0, 0)) / 24 / 60 / 60 / 1000;
+  }
+
+  function parseTimeString(s, sunphases) {
+    var retval, matches, date;
+    s = s.trim();
+    if (matches = s.match(/^(\d\d):(\d\d):(\d\d)$/)) {
+      if (((1 * matches[1]) < 24) && ((1 * matches[2]) <= 60) && ((1 * matches[1]) < 60)) {
+        retval = (3600 * matches[1]) + (60 * matches[2]) + (1 * matches[3]);
+      } else {
+        throw "hh:mm:ss value is invalid";
+      }
+    } else if (matches = s.match(/^(\w+)$/)) {
+        if (sunphases.hasOwnProperty(matches[1])) {
+          date = sunphases[matches[1]];
+          retval = (3600 * date.getHours()) + (60 * date.getMinutes()) + (1 * date.getSeconds());
+        } else {
+          throw "invalid sun phase key '" + matches[1] + "'";
+        }
+    } else if (matches = s.match(/^(\w+)(\+|\-)(\d+)(h|m|s)$/)) {
+        if (sunphases.hasOwnProperty(matches[1])) {
+          date = sunphases[matches[1]];
+          retval = (3600 * date.getHours()) + (60 * date.getMinutes()) + (1 * date.getSeconds());
+          switch (matches[4]) {
+            case 'h': retval += (((matches[2] == "+")?1:-1) * matches[3] * 3600)
+              break;
+            case 'm': retval += (((matches[2] == "+")?1:-1) * matches[3] * 60)
+              break;
+            case 's': retval += (((matches[2] == "+")?1:-1) * matches[3])
+              break;
+          }
+        } else {
+          throw "invalid sun phase key '" + matches[1] + "'";
+        }
+    } else {
+      throw "error parsing '" + s + "'";
+    }
+    return(retval);
+  }
+
+  return plugin
+}

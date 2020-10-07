@@ -1,0 +1,45 @@
+{
+  "interval": {
+  },
+  "root": {
+  },
+  "notifications": {
+    "items": {
+      "inrangenotification": {
+        "path": {
+          "classNames": "col-sm-4"
+        },
+        "state": {
+          "classNames": "col-sm-4"
+        },
+        "method": {
+          "classNames": "col-sm-4",
+          "ui:widget": {
+            "component": "checkboxes",
+            "options": {
+              "inline": true
+            }
+          }
+        }
+      },
+      "outrangenotification": {
+        "path": {
+          "classNames": "col-sm-4"
+        },
+        "state": {
+          "classNames": "col-sm-4"
+        },
+        "method": {
+          "classNames": "col-sm-4",
+          "ui:widget": {
+            "component": "checkboxes",
+            "options": {
+              "inline": true
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

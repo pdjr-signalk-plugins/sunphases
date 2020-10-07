@@ -1,0 +1,35 @@
+{
+  "name": "signalk-sunphases",
+  "version": "1.0.0",
+  "description": "Inject sun phase paths into Signal K",
+  "main": "index.js",
+  "signalk-plugin-enabled-by-default": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/preeve9534/signalk-sunphases.git"
+  },
+  "keywords": [
+    "signalk-node-server-plugin",
+    "signalk",
+    "sunphases",
+    "suncalc",
+    "plugin"
+  ],
+  "author": "Paul Reeve <preeve@pdjr.eu>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/preeve9534/signalk-sunphases/issues"
+  },
+  "homepage": "https://github.com/preeve9534/signalk-sunphases#readme",
+  "dependencies": {
+    "baconjs": "^1.0.1",
+    "suncalc": "^1.8.0"
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "devDependencies": {}
+}
