@@ -51,11 +51,11 @@ module.exports = function (app) {
   plugin.start = function(options) {
     if ((!options) || (Object.keys(options).length == 0)) {
       options = { "interval": DEFAULT_OPTIONS_INTERVAL, "root": DEFAULT_OPTIONS_ROOT, "notifications": [] };
-      log.W("using built-in defaults " + JSON.stringify(options));
+      log.W("using built-in defaults %s", JSON.stringify(options));
     }
     options.root = options.root.trim().replace(/^\.+|\.+$/g,'') + ".";
      
-    log.N("updating " + options.root + " every " + options.interval + " seconds");
+    log.N("updating %s every %d seconds", options.root, options.interval);
     debug.N("*", "available debug tokens: %s", debug.getKeys().join(", "));
 
     var positionStream = app.streambundle.getSelfStream("navigation.position");
@@ -74,7 +74,7 @@ module.exports = function (app) {
 
         if ((!options.lastupdateday) || (options.lastupdateday != today)) {
           if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
-            log.N("maintaining " + Object.keys(options.times).length + " sun phase and " + options.notifications.length + " notification paths.");
+            log.N("maintaining %d sun phase and %d notification paths", Object.keys(options.times).length, options.notifications.length);
             deltas = Object.keys(options.times).map(k => {
                 var delta = { "path": options.root + k, "value": options.times[k].toISOString() };
                 debug.N("keys", JSON.stringify(delta));
@@ -176,7 +176,7 @@ module.exports = function (app) {
     var retval, matches, date;
     s = s.trim();
     if (matches = s.match(/^(\d\d):(\d\d):(\d\d)$/)) {
-      if (((1 * matches[1]) < 24) && ((1 * matches[2]) <= 60) && ((1 * matches[1]) < 60)) {
+      if (((1 * matches[1]) < 24) && ((1 * matches[2]) < 60) && ((1 * matches[3]) < 60)) {
         retval = (3600 * matches[1]) + (60 * matches[2]) + (1 * matches[3]);
       } else {
         throw "hh:mm:ss value is invalid";
