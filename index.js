@@ -74,7 +74,7 @@ module.exports = function (app) {
 
         if ((!options.lastupdateday) || (options.lastupdateday != today)) {
           if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
-            log.N("maintaining " + Object.keys(options.times).length + " keys under " + options.root);
+            log.N("maintaining " + Object.keys(options.times).length + " sun phase and " + options.notifications.length + " notification paths.");
             deltas = Object.keys(options.times).map(k => {
                 var delta = { "path": options.root + k, "value": options.times[k].toISOString() };
                 debug.N("keys", JSON.stringify(delta));
