@@ -78,7 +78,7 @@ The default configuration illustrates the general structure:
 }
 ```
 
-When __signalk-sunphases__  starts, and shortly after midnight Zulu time
+When __signalk-sunphases__  starts, and shortly after midnight Zulu time,
 it computes sun phase values for the current day and stores them in
 keys under the specified __root__ (see below). 
 
