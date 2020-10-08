@@ -12,8 +12,7 @@ __signalk-sunphases__ uses Vladimir Agafonkin's
 [SunCalc](https://github.com/mourner/suncalc)
 library to calculate sunlight phases (times for sunrise, sunset, dusk,
 etc.) for the vessel's current location and injects the resulting time
-values into the Signal K state model (by default as paths under
-"environment.sunphases").
+values into the Signal K state.
 
 Using these values as a starting point, you can define as many simple
 rules as you need to raise and cancel notifications as sunlight phase
@@ -156,8 +155,8 @@ dashboard.
 The plugin also responds in a more fulsome way to the following debug
 keys.
 
-| Key                   | Meaning                       |
-|:----------------------|:------------------------------|
-| sunphases:\*            | Enable all keys.              |
-| sunphases:keys          | Log generated sun phase keys. |
-| sunphases:notifications | Log notification updates.     |
+| Key                     | Meaning                              |
+|:------------------------|:-------------------------------------|
+| sunphases:\*            | Enable all debug keys.               |
+| sunphases:keys          | Log updates to sun phase data paths. |
+| sunphases:notifications | Log updates to notification paths.   |

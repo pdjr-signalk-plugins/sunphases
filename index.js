@@ -67,26 +67,44 @@ module.exports = function (app) {
         var today = dayOfYear(now);
         var deltas = [];
 
+        /**************************************************************
+         * Add sunphase key updates to <deltas> if this is the first
+         * time around or if we have entered a new day.
+         */
+
         if ((!options.lastupdateday) || (options.lastupdateday != today)) {
-          options.times = suncalc.getTimes(now, position.latitude, position.longitude);
-          log.N("updating " + Object.keys(options.times).length + " keys under " + options.root);
-          Object.keys(options.times).forEach(k => {
-            deltas.push({ "path": options.root + k, "value": options.times[k].toISOString() });
-            debug.N("keys", "key '%s' = '%s'", k, options.times[k].toISOString());
-          });
-          app.handleMessage(plugin.id, makeDelta(plugin.id, deltas));
-          options.lastupdateday = today;
+          if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
+            log.N("maintaining " + Object.keys(options.times).length + " keys under " + options.root);
+            deltas = Object.keys(options.times).map(k => {
+                var delta = { "path": options.root + k, "value": options.times[k].toISOString() };
+                debug.N("keys", JSON.stringify(delta));
+                return(delta);
+            });
+            options.lastupdateday = today;
+          } else {
+            log.E("unable to compute sun phase data");
+          }
         }
 
-        if ((options.times) && (options.notifications.length)) {
-          var notificationUpdateCount = 0;
+        /**************************************************************
+         * Check that we actually recovered a sun phase data into
+         * <options.times> and if so, add notification key updates to
+         * <deltas>.
+         */
+
+        if (options.times) {
           options.notifications.forEach(notification => {
             try {
+              // Get the times of interest as seconds in this day.
               now = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
               var start = parseTimeString(notification.rangelo, options.times);
               var end = parseTimeString(notification.rangehi, options.times);
+              // Is this an "in-range" or "out-of-range" update?
               if ((now > start) && (now < end)) {
+                // It's "in-range". Is there an "in-range" notification path?
+                // If so and we haven't made this update already...
                 if (notification.inrangenotification.path && (!notification.actioned || (notification.actioned != 1))) {
+                  // Add a create in-range notification delta to deltas.
                   deltas.push({
                     "path": notification.inrangenotification.path,
                     "value": {
@@ -95,10 +113,11 @@ module.exports = function (app) {
                       "method": notification.inrangenotification.method || []
                     }
                   });
+                  debug.N("notifications", JSON.stringify(deltas[deltas.length - 1]));
+                  // And add a delete out-of-range notification delta to deltas.
                   deltas.push({ "path": notification.outrangenotification.path, "value": null });
+                  debug.N("notifications", JSON.stringify(deltas[deltas.length - 1]));
                   notification.actioned = 1;
-                  notificationUpdateCount++;
-                  debug.N("notifications", "issuing %s, cancelling %s", notification.inrangenotification.path, notification.outrangenotification.path);
                 }
               } else {
                 if (notification.outrangenotification.path && (!notification.actioned || (notification.action  != -1))) {
@@ -110,10 +129,10 @@ module.exports = function (app) {
                       "method": notification.outrangenotification.method || []
                     }
                   });
+                  debug.N("notifications", JSON.stringify(deltas[deltas.length - 1]));
                   deltas.push({ "path": notification.inrangenotification.path, "value": null });
+                  debug.N("notifications", JSON.stringify(deltas[deltas.length - 1]));
                   notification.actioned = -1;
-                  notificationUpdateCount++;
-                  debug.N("notifications", "issuing %s, cancelling %s", notification.outrangenotification.path, notification.inrangenotification.path);
                 }
               }              
             } catch(e) {
@@ -121,6 +140,7 @@ module.exports = function (app) {
             }
           });
         }
+        // Finally, push our collection of deltas to Signal K.
         if (deltas.length) app.handleMessage(plugin.id, makeDelta(plugin.id, deltas));
       })
     );
