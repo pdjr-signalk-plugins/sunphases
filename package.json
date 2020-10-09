@@ -26,6 +26,7 @@
   "homepage": "https://github.com/preeve9534/signalk-sunphases#readme",
   "dependencies": {
     "baconjs": "^1.0.1",
+    "sprintf-js": "^1.1.2",
     "suncalc": "^1.8.0"
   },
   "directories": {
