@@ -33,7 +33,7 @@ module.exports = function (app) {
   plugin.name = 'Sunlight phase calculator';
   plugin.description = 'Inject sunlight phase paths into Signal K';
 
-  const log = new Log(plugin.id, { ncallback: app.setProviderStatus, ecallback: app.setProviderError });
+  const log = new Log(plugin.id, { ncallback: app.setPluginStatus, ecallback: app.setPluginError });
   const debug = new DebugLog(plugin.id, [ "keys", "notifications" ]);
 
   plugin.schema = function() {
