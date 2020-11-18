@@ -1,16 +1,16 @@
 {
   "type": "object",
   "properties": {
+    "root": {
+      "type": "string",
+      "title": "Path under which to place computed keys",
+      "default": "environment.sunphases."
+    },
     "interval": {
       "title": "Interval between notification updates in seconds (0 is once upon plugin starts)",
       "type": "number",
       "minimum": 0,
       "default": 600
-    },
-    "root": {
-      "type": "string",
-      "title": "Path under which to place computed keys",
-      "default": "environment.sunphases."
     },
     "notifications": {
       "type": "array",

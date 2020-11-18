@@ -18,145 +18,113 @@ Using these values as a starting point, you can define as many simple
 rules as you need to raise and cancel notifications as sunlight phase
 events occur during the day.
 
-A vanilla installation of __signalk-sunphases__ manages two notifications,
-"notifications.daytime" and "notifications.nighttime". 
+A vanilla installation of __signalk-sunphases__ manages two
+notifications, 'notifications.daytime' and 'notifications.nighttime'. 
 
 ## System requirements
 
-__signalk-sunphases__ requires that the the 'baconjs' and 'suncalc' npm's
-are available in your Node server context.
-If the module claims they are not found, you can install them locally
-to the plugin by changing to the plugin directory and issuing the
-following commands.
-```
-$> npm install baconjs
-$> npm install suncalc
-```
+__signalk-sunphases__ has no special installation requirements.
 
 ## Installation
 
-Download and install __signalk-sunphases__ using the "Appstore" menu
+Download and install __signalk-sunphases__ using the 'Appstore' menu
 option in your Signal K Node server console.
 The plugin can also be obtained from the 
 [project homepage](https://github.com/preeve9534/signalk-sunphases)
 and installed using
 [these instructions](https://github.com/SignalK/signalk-server-node/blob/master/SERVERPLUGINS.md).
 
-The plugin is enabled by default: once installed you should find the
-keys it maintains under "environment.sunphases...." and "notifications....".
-
 ## Using the plugin
 
-__signalk-sunphases__ operates autonomously.
+__signalk-sunphases__ is enabled by default and operates sutonomously.
 
 The plugin can be configured using the Signal K Node server plugin
-configuration GUI, or you can just edit the plugin's JSON configuration
-file 'sunphases.json' using your preferred text editor.
+configuration GUI.
+The configuration interface lets you maintain the following properties.
  
-The default configuration illustrates the general structure:
-```
-{
-  "enabled": true,
-  "enableLogging": false,
-  "enableDebug": false,
-  "configuration": {
-    "interval": 600,
-    "root": "environment.sunphases",
-    "notifications": [
-      {
-        "rangelo": "dawn",
-        "rangehi": "dusk",
-        "inrangenotification": {
-          "path": "notifications.daytime"
-        },
-        "outrangenotification": {
-          "path": "notifications.nighttime"
-        }
-      }
-    ]
-  }
-}
-```
+__Path under which to store sunphase keys__ [root]\
+This required string property tells the plugin where in the Signal K
+data store it should place sun phase data.
+The default value is 'environment.sunphases.' and the plugin will
+populate this tree when it starts and refresh it each day shortly after
+midnight Zulu time.
 
-When __signalk-sunphases__  starts, and shortly after midnight Zulu time,
-it computes sun phase values for the current day and stores them in
-keys under the specified __root__ (see below). 
-
-The required __interval__ property introduces a natural number value
-that defines how many seconds should elapse between notification
-updates.
-The default value is 600 which will cause the plugin to check and if
-necessary update notifications every 10 minutes.
-Setting the __interval__ value to 0 will cause the plugin to process
-notifications immediately that it is retsarted and then never again:
-useful for testing, but not much else.
-
-The required __root__ property introduces a string value that defines
-the path under which the plugin will store sun phase data. 
-The default value is "environment.sunphases".
-The keys and the values that are inserted here are those defined as
-properties in the object returned by a call to
+The key/values inserted under [root] are those defined as properties in
+the object returned by a call to
 [SunCalc.getTimes()](https://github.com/mourner/suncalc#sunlight-times).
 You can get the plugin to log a list of the generated keys and their
-values by setting the debug key 'sunphases:keys'.
+values by setting the debug key 'sunphases'.
 
-The required __notifications__ property introduces an array that
-can contain an arbitrary number of notification definitions.
-Each definition identifies a time period and the notifications that
+__Number of seconds between notification updates__ [interval]\
+This required number property defines how many seconds should elapse
+between notification updates.
+The default value is 600 which will cause the plugin to check and if
+necessary update notifications every 10 minutes.
+
+Setting [interval] to 0 will cause the plugin to process notifications
+immediately that it is retsarted and then never again: useful for
+testing, but not much else.
+
+__Notification rules__ [notifications]\
+This array property contains a collection of *notification definitions*
+each of whcih identifies a time window and the notifications that
 should be raised when the current time of day is within and outside of
 this range.
-The time limits can be specified as SunCalc key names (optionally with
-some arithmetic tweaking) or as absolute Zulu times.
-Bear in mind that __signalk-sunphases__ wass not designed to be a
-real-time scheduler and that its utility in this role is severely
-hampered by the time granularity implied by the value of __interval__.
 
-Each object in the __notifications__ array is defined in the following
-way.
+Time limits can be specified as SunCalc key names (optionally with some
+arithmetic tweaking) or as absolute Zulu times.
 
-The required __rangelo__ property introduces a string value that
-specifies the time of the start of the notification period.
-The required format for value is
-"( *key*[(__+__|__-__)*n*(__h__|__m__|__s__)] | *hh*__:__*mm*__:__*ss* )",
+Each object in the notification definition has the following
+properties.
+
+__Start of notification ON period__ [rangelo]\
+This required string property specifies the notification window start
+time.
+The required format for value is:
+
+&nbsp;&nbsp;&nbsp;&nbsp;( *key*[(__+__|__-__)*n*(__h__|__m__|__s__)] | *hh*__:__*mm*__:__*ss* )
+
 where *key* is the name of a SunCalc key (and may be all you need).
 
-The required __rangehi__ property introduces a string value that
-specifies the time of the end of the notification period.
-See __rangelo__ above for the format considerations.
+__End of notification ON period__ [rangehi]\
+This required string property specifies the notification window end
+time.
+See [rangelo] above for the format considerations.
 
-The optional __inrangenotification__ property introduces an object
-that defines the notification that should be raised when the current
-time of day is within the range __rangelo__...__rangehi__.
+__In range notification__ [inrangenotification]\
+This set of three properties define the notification that should be
+raised when the current time of day is within the range [rangelo] to
+[rangehi].
 
-The optional __outrangenotification__ property introduces an object
-that defines the notification that should be raised when the current
-time of day is outside the range __rangelo__...__rangehi__.
+__Notification path__ [path]\
+This required string property must specify an absolute notification
+path. 
 
-The notification definition object specified by __inrangenotification__
-and __outrangenotification__ is defined in the following way:
+__Notification state__ [state]\
+This optional string property specifies the value of the notification
+state field.
+Choose from the available options.
+The default value is 'normal.
 
-The required __path__ property introduces a string which specifies the
-path of the desired notification.
+__Notification methods__ [method]\
+This optional property specifies the values of the notification method
+field.
+Choose from the available options.
+The default is to suggest no notification methods.
 
-The optional __state__ property introduces a string that specifies the
-the value to be used for the state property of any raised notification.
-If __state__ is omitted, then this value will default to "normal".
-
-The optional __method__ property introduces a string array thats
-specifies the value to be used for the method property of any raised
-notification.
-If __method__ is omitted, then this value will default to [].
+__Out of range notification__ [outrangenotification]\
+This set of three properties define the notification that should be
+raised when the current time of day is outside of the range [rangelo]
+to [rangehi].
+Notification property semantics are the same as for
+[outrangenotification].
 
 ## Debugging and logging
 
-__signalk-sunphases__ logs summary status information to the Signal K
-dashboard.
+__signalk-sunphases__ understands the 'sunphases' debug token.
 
-The plugin also responds in a more fulsome way to the following debug
-keys.
+## Author
 
-| Key                     | Meaning                              |
-|:------------------------|:-------------------------------------|
-| sunphases:\*            | Enable all debug keys.               |
-| sunphases:keys          | Log updates to sun phase data paths. |
-| sunphases:notifications | Log updates to notification paths.   |
+Paul Reeve <preeve@pdjr.eu>\
+September 2020
+
