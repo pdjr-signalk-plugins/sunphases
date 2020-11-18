@@ -36,7 +36,7 @@ and installed using
 
 ## Using the plugin
 
-__signalk-sunphases__ is enabled by default and operates sutonomously.
+__signalk-sunphases__ is enabled by default and operates autonomously.
 
 The plugin can be configured using the Signal K Node server plugin
 configuration GUI.
@@ -46,8 +46,9 @@ __Path under which to store sunphase keys__ [root]\
 This required string property tells the plugin where in the Signal K
 data store it should place sun phase data.
 The default value is 'environment.sunphases.' and the plugin will
-populate this tree when it starts and refresh it each day shortly after
-midnight Zulu time.
+populate this tree when it starts and refresh it on the first
+notification update tick after midnight Zulu time on each subsequent
+day.
 
 The key/values inserted under [root] are those defined as properties in
 the object returned by a call to
