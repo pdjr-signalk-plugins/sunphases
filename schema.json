@@ -3,45 +3,45 @@
   "properties": {
     "root": {
       "type": "string",
-      "title": "Path under which to place computed keys",
+      "title": "Path under which to store sun phase keys",
       "default": "environment.sunphases."
     },
     "interval": {
-      "title": "Interval between notification updates in seconds (0 is once upon plugin starts)",
+      "title": "Heartbeat",
       "type": "number",
       "minimum": 0,
       "default": 600
     },
     "notifications": {
       "type": "array",
-      "title": "Notifications",
+      "title": "Notification rules",
       "items": {
         "type": "object",
         "properties": {
           "rangelo": {
             "type": "string",
-            "title": "Start time"
+            "title": "Start of notification ON period"
           },
           "rangehi": {
             "type": "string",
-            "title": "End time"
+            "title": "End of notification ON period"
           },
           "inrangenotification": {
             "title": "In-range notification",
             "type": "object",
             "properties": {
               "path": {
-                "title": "Path",
+                "title": "Notification path",
                 "type": "string"
               },
               "state": {
-                "title": "State",
+                "title": "Notification state",
                 "type": "string",
                 "default": "normal",
                 "enum": [ "normal", "alert", "warn", "alarm", "emergency" ]
               },
               "method": {
-                "title": "Methods",
+                "title": "Notification methods",
                 "type": "array",
                 "default": [],
                 "items": {
@@ -58,17 +58,17 @@
             "type": "object",
             "properties": {
               "path": {
-                "title": "Path",
+                "title": "Notification path",
                 "type": "string"
               },
               "state": {
-                "title": "State",
+                "title": "Notification state",
                 "type": "string",
                 "default": "normal",
                 "enum": [ "normal", "alert", "warn", "alarm", "emergency" ]
               },
               "method": {
-                "title": "Methods",
+                "title": "Notification methods",
                 "type": "array",
                 "default": [],
                 "items": {

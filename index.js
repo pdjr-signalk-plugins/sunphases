@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Paul Reeve <paul@pdjr.eu>
+ * Copyright 2020 Paul Reeve <preeve@pdjr.eu>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-const fs = require('fs');
-const bacon = require('baconjs');
 const suncalc = require('suncalc');
+
 const Log = require("./lib/signalk-liblog/Log.js");
-const DebugLog = require("./lib/signalk-liblog/DebugLog.js");
+const Schema = require("./lib/signalk-libschema/Schema.js");
 
 const PLUGIN_SCHEMA_FILE = __dirname + "/schema.json";
 const PLUGIN_UISCHEMA_FILE = __dirname + "/uischema.json";
+
 const DEFAULT_OPTIONS_INTERVAL = 600;
 const DEFAULT_OPTIONS_ROOT = "environment.sunphases";
 
@@ -31,21 +31,18 @@ module.exports = function (app) {
 
   plugin.id = 'sunphases';
   plugin.name = 'Sunlight phase calculator';
-  plugin.description = 'Inject sunlight phase paths into Signal K';
+  plugin.description = 'Inject sunlight phase paths into Signal K.';
 
   const log = new Log(plugin.id, { ncallback: app.setPluginStatus, ecallback: app.setPluginError });
-  const debug = new DebugLog(plugin.id, [ "keys", "notifications" ]);
 
   plugin.schema = function() {
-    var retval = {};
-    try { retval = fs.readFileSync(PLUGIN_SCHEMA_FILE, 'utf8'); } catch(e) { log.E("bad or missing schema file '" + PLUGIN_SCHEMA_FILE + "'"); }
-    return(JSON.parse(retval));
-  }
+    var schema = Schema.createSchema(PLUGIN_SCHEMA_FILE);
+    return(schema.getSchema());
+  };
 
   plugin.uiSchema = function() {
-    var retval = {};
-    try { retval = fs.readFileSync(PLUGIN_UISCHEMA_FILE, 'utf8'); } catch(e) { }
-    return(JSON.parse(retval));
+    var schema = Schema.createSchema(PLUGIN_UISCHEMA_FILE);
+    return(schema.getSchema());
   }
 
   plugin.start = function(options) {
@@ -55,8 +52,7 @@ module.exports = function (app) {
     }
     options.root = options.root.trim().replace(/^\.+|\.+$/g,'') + ".";
      
-    log.N("updating %s every %d seconds", options.root, options.interval);
-    debug.N("*", "available debug tokens: %s", debug.getKeys().join(", "));
+    log.N("maintaining keys in (%s)", options.root);
 
     var positionStream = app.streambundle.getSelfStream("navigation.position");
     positionStream = (options.interval == 0)?positionStream.take(1):positionStream.debounceImmediate(options.interval * 1000);
@@ -69,18 +65,22 @@ module.exports = function (app) {
 
         /**************************************************************
          * Add sunphase key updates to <deltas> if this is the first
-         * time around or if we have entered a new day.
+         * time around or if we have entered a new day or if our
+         * position has changed significantly.
          */
 
-        if ((!options.lastupdateday) || (options.lastupdateday != today)) {
+        options.lastLatitude = 0.0;
+        options.lastLongitude = 0.0;
+        if ((!options.lastupdateday) || (options.lastupdateday != today)  || (Math.abs(options.lastLatitude - position.latitude) > 1.0) || (Math.abs(options.lastLongitude - position.longitude) > 1.0)) {
           if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
-            log.N("maintaining %d sun phase and %d notification paths", Object.keys(options.times).length, options.notifications.length);
             deltas = Object.keys(options.times).map(k => {
                 var delta = { "path": options.root + k, "value": options.times[k].toISOString() };
-                debug.N("keys", JSON.stringify(delta));
+                app.debug("injecting keys %s: ", JSON.stringify(delta));
                 return(delta);
             });
             options.lastupdateday = today;
+            options.lastLatitude = 0.0;
+            options.lastLongitude = 0.0;
           } else {
             log.E("unable to compute sun phase data");
           }
@@ -113,10 +113,9 @@ module.exports = function (app) {
                       "method": notification.inrangenotification.method || []
                     }
                   });
-                  debug.N("notifications", JSON.stringify(deltas[deltas.length - 1]));
+                  app.debug("issuing notifications: %s", JSON.stringify(deltas[deltas.length - 1]));
                   // And add a delete out-of-range notification delta to deltas.
                   deltas.push({ "path": notification.outrangenotification.path, "value": null });
-                  debug.N("notifications", JSON.stringify(deltas[deltas.length - 1]));
                   notification.actioned = 1;
                 }
               } else {
@@ -129,9 +128,8 @@ module.exports = function (app) {
                       "method": notification.outrangenotification.method || []
                     }
                   });
-                  debug.N("notifications", JSON.stringify(deltas[deltas.length - 1]));
+                  app.debug("issuing notifications: %s", JSON.stringify(deltas[deltas.length - 1]));
                   deltas.push({ "path": notification.inrangenotification.path, "value": null });
-                  debug.N("notifications", JSON.stringify(deltas[deltas.length - 1]));
                   notification.actioned = -1;
                 }
               }              

@@ -25,6 +25,9 @@ notifications, 'notifications.daytime' and 'notifications.nighttime'.
 
 __signalk-sunphases__ has no special installation requirements.
 
+The key 'navigation.position' is used to determine the location to
+which computed sun phase data relates.
+
 ## Installation
 
 Download and install __signalk-sunphases__ using the 'Appstore' menu
@@ -42,13 +45,10 @@ The plugin can be configured using the Signal K Node server plugin
 configuration GUI.
 The configuration interface lets you maintain the following properties.
  
-__Path under which to store sunphase keys__ [root]\
+__Path under which to store sun phase keys__ [root]\
 This required string property tells the plugin where in the Signal K
 data store it should place sun phase data.
-The default value is 'environment.sunphases.' and the plugin will
-populate this tree when it starts and refresh it on the first
-notification update tick after midnight Zulu time on each subsequent
-day.
+The default value is 'environment.sunphases.'.
 
 The key/values inserted under [root] are those defined as properties in
 the object returned by a call to
@@ -56,15 +56,19 @@ the object returned by a call to
 You can get the plugin to log a list of the generated keys and their
 values by setting the debug key 'sunphases'.
 
-__Number of seconds between notification updates__ [interval]\
-This required number property defines how many seconds should elapse
-between notification updates.
-The default value is 600 which will cause the plugin to check and if
-necessary update notifications every 10 minutes.
+__Heartbeat__ [interval]\
+This required number property defines how frequently the plugin should
+refresh its data.
+At each [interval] the plugin will:
 
-Setting [interval] to 0 will cause the plugin to process notifications
-immediately that it is retsarted and then never again: useful for
-testing, but not much else.
+1. Refresh the keys under [root] if the vessel position has changed by
+more than one degree of latitude or longitude or if Zulu time has
+rolled over into a new day.
+
+2. Process all defined notification rules.
+ 
+The default value for [interval] is 600 which will cause the plugin to
+perform a refresh every 10 minutes.
 
 __Notification rules__ [notifications]\
 This array property contains a collection of *notification definitions*
