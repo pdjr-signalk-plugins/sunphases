@@ -54,6 +54,11 @@ module.exports = function (app) {
      
     log.N("maintaining keys in (%s)", options.root);
 
+    // Publish meta information for all maintained keys
+    //
+    var deltas = options.metadata.map(entry => ({ "path": options.root + entry.key + ".meta", "value": { "description": entry.description } }));
+    if (deltas.length) app.handleMessage(plugin.id, makeDelta(plugin.id, deltas)); 
+
     var positionStream = app.streambundle.getSelfStream("navigation.position");
     positionStream = (options.interval == 0)?positionStream.take(1):positionStream.debounceImmediate(options.interval * 1000);
 
@@ -103,10 +108,10 @@ module.exports = function (app) {
               if ((now > start) && (now < end)) {
                 // It's "in-range". Is there an "in-range" notification path?
                 // If so and we haven't made this update already...
-                if (notification.inrangenotification.path && (!notification.actioned || (notification.actioned != 1))) {
+                if (notification.inrangenotification.key && (!notification.actioned || (notification.actioned != 1))) {
                   // Add a create in-range notification delta to deltas.
                   deltas.push({
-                    "path": notification.inrangenotification.path,
+                    "path": "notifications." + options.root + notification.inrangenotification.key,
                     "value": {
                       "message": "Between " + notification.rangelo + " and " + notification.rangehi,
                       "state": notification.inrangenotification.state || "normal",
@@ -119,9 +124,9 @@ module.exports = function (app) {
                   notification.actioned = 1;
                 }
               } else {
-                if (notification.outrangenotification.path && (!notification.actioned || (notification.action  != -1))) {
+                if (notification.outrangenotification.key && (!notification.actioned || (notification.action  != -1))) {
                   deltas.push({
-                    "path": notification.outrangenotification.path,
+                    "path": "notifications." + options.root + notification.outrangenotification.key,
                     "value": {
                       "message": "Outside " + notification.rangelo + " and " + notification.rangehi,
                       "state": notification.outrangenotification.state || "normal",

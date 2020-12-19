@@ -101,9 +101,10 @@ This set of three properties define the notification that should be
 raised when the current time of day is within the range [rangelo] to
 [rangehi].
 
-__Notification path__ [path]\
-This required string property must specify an absolute notification
-path. 
+__Notification key__ [key]\
+This required string property specifies an key under which the
+notification will be placed.
+The full key path will be 'notifications.*root*.*key*'.
 
 __Notification state__ [state]\
 This optional string property specifies the value of the notification
