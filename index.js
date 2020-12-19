@@ -59,7 +59,6 @@ module.exports = function (app) {
     var deltas = options.metadata.map(entry => ({ "path": options.root + entry.key + ".meta", "value": { "description": entry.description } }));
     if (deltas.length) app.handleMessage(plugin.id, makeDelta(plugin.id, deltas)); 
 
-    //
     var positionStream = app.streambundle.getSelfStream("navigation.position");
     positionStream = (options.interval == 0)?positionStream.take(1):positionStream.debounceImmediate(options.interval * 1000);
 
