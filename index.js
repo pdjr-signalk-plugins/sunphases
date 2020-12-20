@@ -31,7 +31,7 @@ module.exports = function (app) {
 
   plugin.id = 'sunphases';
   plugin.name = 'Sunlight phase calculator';
-  plugin.description = 'Inject sunlight phase paths into Signal K.';
+  plugin.description = 'Inject sunlight phase paths into Signal K';
 
   const log = new Log(plugin.id, { ncallback: app.setPluginStatus, ecallback: app.setPluginError });
 
@@ -52,13 +52,21 @@ module.exports = function (app) {
     }
     options.root = options.root.trim().replace(/^\.+|\.+$/g,'') + ".";
      
-    log.N("maintaining keys in (%s)", options.root);
+    log.N("maintaining keys in '%s'", options.root);
 
     // Publish meta information for all maintained keys
     //
-    var deltas = options.metadata.map(entry => ({ "path": options.root + entry.key + ".meta", "value": { "description": entry.description } }));
-    if (deltas.length) app.handleMessage(plugin.id, makeDelta(plugin.id, deltas)); 
+    if ((options.metadata) && Array.isArray(options.metadata) && (options.metadata.length > 0)) {
+      var metaDeltas = options.metadata.map(entry => ({ "path": options.root + entry.key + ".meta", "value": { "description": entry.description } }));
+      if (metaDeltas.length) app.handleMessage(plugin.id, makeDelta(plugin.id, metaDeltas)); 
+      app.debug("publishing meta data (%o)", metaDeltas);
+    } else {
+      log.W("no metadata available - please add to app schema");
+    }
 
+    // Get a stream that reports vessel position and sample it at the
+    // requested interval.
+    //
     var positionStream = app.streambundle.getSelfStream("navigation.position");
     positionStream = (options.interval == 0)?positionStream.take(1):positionStream.debounceImmediate(options.interval * 1000);
 
@@ -78,11 +86,7 @@ module.exports = function (app) {
         options.lastLongitude = 0.0;
         if ((!options.lastupdateday) || (options.lastupdateday != today)  || (Math.abs(options.lastLatitude - position.latitude) > 1.0) || (Math.abs(options.lastLongitude - position.longitude) > 1.0)) {
           if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
-            deltas = Object.keys(options.times).map(k => {
-                var delta = { "path": options.root + k, "value": options.times[k].toISOString() };
-                app.debug("injecting keys %s: ", JSON.stringify(delta));
-                return(delta);
-            });
+            deltas = Object.keys(options.times).map(k => ({ "path": options.root + k, "value": options.times[k].toISOString() }));
             options.lastupdateday = today;
             options.lastLatitude = 0.0;
             options.lastLongitude = 0.0;
@@ -92,7 +96,7 @@ module.exports = function (app) {
         }
 
         /**************************************************************
-         * Check that we actually recovered a sun phase data into
+         * Check that we actually recovered sun phase data into
          * <options.times> and if so, add notification key updates to
          * <deltas>.
          */
@@ -100,6 +104,9 @@ module.exports = function (app) {
         if (options.times) {
           options.notifications.forEach(notification => {
             try {
+              // Build in-range and out-range notification paths.
+              var nirpath = "notifications." + options.root + notification.inrangenotification.key;
+              var norpath = "notifications." + options.root + notification.outrangenotification.key;
               // Get the times of interest as seconds in this day.
               now = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
               var start = parseTimeString(notification.rangelo, options.times);
@@ -111,7 +118,7 @@ module.exports = function (app) {
                 if (notification.inrangenotification.key && (!notification.actioned || (notification.actioned != 1))) {
                   // Add a create in-range notification delta to deltas.
                   deltas.push({
-                    "path": "notifications." + options.root + notification.inrangenotification.key,
+                    "path": nirpath,
                     "value": {
                       "message": "Between " + notification.rangelo + " and " + notification.rangehi,
                       "state": notification.inrangenotification.state || "normal",
@@ -120,13 +127,13 @@ module.exports = function (app) {
                   });
                   app.debug("issuing notifications: %s", JSON.stringify(deltas[deltas.length - 1]));
                   // And add a delete out-of-range notification delta to deltas.
-                  deltas.push({ "path": notification.outrangenotification.path, "value": null });
+                  deltas.push({ "path": norpath, "value": null });
                   notification.actioned = 1;
                 }
               } else {
                 if (notification.outrangenotification.key && (!notification.actioned || (notification.action  != -1))) {
                   deltas.push({
-                    "path": "notifications." + options.root + notification.outrangenotification.key,
+                    "path": norpath,
                     "value": {
                       "message": "Outside " + notification.rangelo + " and " + notification.rangehi,
                       "state": notification.outrangenotification.state || "normal",
@@ -134,7 +141,7 @@ module.exports = function (app) {
                     }
                   });
                   app.debug("issuing notifications: %s", JSON.stringify(deltas[deltas.length - 1]));
-                  deltas.push({ "path": notification.inrangenotification.path, "value": null });
+                  deltas.push({ "path": nirpath, "value": null });
                   notification.actioned = -1;
                 }
               }              
@@ -145,6 +152,7 @@ module.exports = function (app) {
         }
         // Finally, push our collection of deltas to Signal K.
         if (deltas.length) app.handleMessage(plugin.id, makeDelta(plugin.id, deltas));
+        app.debug("pushing updates (%o)", deltas);
       })
     );
   }

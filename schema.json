@@ -4,7 +4,7 @@
     "root": {
       "type": "string",
       "title": "Path under which to store sun phase keys",
-      "default": "environment.sunphases."
+      "default": "environment.sunphases"
     },
     "interval": {
       "title": "Heartbeat",
@@ -95,7 +95,7 @@
         "properties": {
           "key": {
             "type": "string",
-            "enum": [ "nadir", "sunrise", "sunset", "sunriseEnd", "sunsetStart", "dawn", "dusk", "nauticalDawn", "nauticalDusk", "nightEnd", "night", "goldenHourEnd", "goldenHour", "solarNoon" ]
+            "enum": [ "dawn", "dusk", "goldenHour", "goldenHourEnd", "nadir", "nauticalDawn", "nauticalDusk", "night", "nightEnd", "solarNoon", "sunrise", "sunriseEnd", "sunset", "sunsetStart" ]
           },
           "description": { "type": "string" },
           "displayName": { "type": "string" },
