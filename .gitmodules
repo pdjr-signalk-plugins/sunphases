@@ -4,3 +4,6 @@
 [submodule "lib/signalk-libschema"]
 	path = lib/signalk-libschema
 	url = http://github.com/preeve9534/signalk-libschema
+[submodule "lib/signalk-libdelta"]
+	path = lib/signalk-libdelta
+	url = https://github.com/preeve9534/signalk-libdelta
