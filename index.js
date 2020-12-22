@@ -57,9 +57,11 @@ module.exports = function (app) {
     // Publish meta information for all maintained keys
     //
     if ((options.metadata) && Array.isArray(options.metadata) && (options.metadata.length > 0)) {
-      var metaDeltas = options.metadata.map(entry => ({ "path": options.root + entry.key + ".meta", "value": { "description": entry.description } }));
-      if (metaDeltas.length) app.handleMessage(plugin.id, makeDelta(plugin.id, metaDeltas)); 
-      app.debug("publishing meta data (%o)", metaDeltas);
+      options.metadata.forEach(entry => {
+        var metaPath = app.getPath("self") + "." + options.root + entry.key;
+        var metaValue = { "description": entry.description, "units": "ISO-8601 (UTC)" };
+        app.handleMessage(plugin.id, staticDelta(metaPath, "meta", metaValue));
+      });
     } else {
       log.W("no metadata available - please add to app schema");
     }
@@ -173,7 +175,7 @@ module.exports = function (app) {
         {
           "source": { "type": "plugin", "src": pluginId, },
           "timestamp": (new Date()).toISOString(),
-          "values": pairs.map(p => { return({ "path": p.path, "value": p.value }); }) 
+          "values": pairs
         }
       ]
     });
@@ -218,6 +220,13 @@ module.exports = function (app) {
       throw "error parsing '" + s + "'";
     }
     return(retval);
+  }
+
+  function staticDelta(fullpath, key, value) {
+    return({
+      "context": fullpath,
+      "updates": [ { "values": [ { "path": "", "value": { [key]: value } } ] } ] 
+    });
   }
 
   return plugin
