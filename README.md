@@ -1,4 +1,4 @@
-# signalk-sunphases
+# pdjr-skplugin-sunphases
 
 Inject sunlight phase data into Signal K.
 
@@ -8,7 +8,7 @@ This project implements a plugin for the
 Reading the [Alarm, alert and notification handling](http://signalk.org/specification/1.0.0/doc/notifications.html)
 section of the Signal K documentation may provide helpful orientation.
 
-__signalk-sunphases__ uses Vladimir Agafonkin's
+__pdjr-skplugin-sunphases__ uses Vladimir Agafonkin's
 [SunCalc](https://github.com/mourner/suncalc)
 library to calculate sunlight phases (times for sunrise, sunset, dusk,
 etc.) for the vessel's current location and injects the resulting time
@@ -18,28 +18,28 @@ Using these values as a starting point, you can define as many simple
 rules as you need to raise and cancel notifications as sunlight phase
 events occur during the day.
 
-A vanilla installation of __signalk-sunphases__ manages two
+A vanilla installation of __pdjr-skplugin-sunphases__ manages two
 notifications, 'notifications.daytime' and 'notifications.nighttime'. 
 
 ## System requirements
 
-__signalk-sunphases__ has no special installation requirements.
+__pdjr-skplugin-sunphases__ has no special installation requirements.
 
 The key 'navigation.position' is used to determine the location to
 which computed sun phase data relates.
 
 ## Installation
 
-Download and install __signalk-sunphases__ using the 'Appstore' menu
+Download and install __pdjr-skplugin-sunphases__ using the 'Appstore' menu
 option in your Signal K Node server console.
 The plugin can also be obtained from the 
-[project homepage](https://github.com/preeve9534/signalk-sunphases)
+[project homepage](https://github.com/preeve9534/pdjr-skplugin-sunphases)
 and installed using
 [these instructions](https://github.com/SignalK/signalk-server-node/blob/master/SERVERPLUGINS.md).
 
 ## Using the plugin
 
-__signalk-sunphases__ is enabled by default and operates autonomously.
+__pdjr-skplugin-sunphases__ is enabled by default and operates autonomously.
 
 The plugin can be configured using the Signal K Node server plugin
 configuration GUI.
@@ -127,7 +127,7 @@ Notification property semantics are the same as for
 
 ## Debugging and logging
 
-__signalk-sunphases__ understands the 'sunphases' debug token.
+__pdjr-skplugin-sunphases__ understands the 'sunphases' debug token.
 
 ## Author
 

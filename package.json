@@ -1,5 +1,5 @@
 {
-  "name": "signalk-sunphases",
+  "name": "pdjr-skplugin-sunphases",
   "version": "1.0.0",
   "description": "Inject sun phase paths into Signal K",
   "main": "index.js",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/preeve9534/signalk-sunphases.git"
+    "url": "git+https://github.com/preeve9534/pdjr-skplugin-sunphases.git"
   },
   "keywords": [
     "signalk-node-server-plugin",
@@ -21,9 +21,9 @@
   "author": "Paul Reeve <preeve@pdjr.eu>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/preeve9534/signalk-sunphases/issues"
+    "url": "https://github.com/preeve9534/pdjr-skplugin-sunphases/issues"
   },
-  "homepage": "https://github.com/preeve9534/signalk-sunphases#readme",
+  "homepage": "https://github.com/preeve9534/pdjr-skplugin-sunphases#readme",
   "dependencies": {
     "baconjs": "^1.0.1",
     "sprintf-js": "^1.1.2",

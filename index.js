@@ -30,7 +30,7 @@ module.exports = function (app) {
   var plugin = {};
   var unsubscribes = [];
 
-  plugin.id = 'sunphases';
+  plugin.id = 'pdjr-skplugin-sunphases';
   plugin.name = 'Sunlight phase calculator';
   plugin.description = 'Inject sunlight phase paths into Signal K';
 
