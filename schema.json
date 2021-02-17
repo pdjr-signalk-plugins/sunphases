@@ -1,126 +1,126 @@
 {
-  "type": "object",
-  "properties": {
-    "root": {
-      "type": "string",
-      "title": "Path under which to store sun phase keys",
-      "default": "environment.sunphases"
-    },
-    "interval": {
-      "title": "Heartbeat",
-      "type": "number",
-      "minimum": 0,
-      "default": 600
-    },
-    "notifications": {
-      "type": "array",
-      "title": "Notification rules",
-      "items": {
-        "type": "object",
-        "properties": {
-          "rangelo": {
+    "type": "object",
+    "properties": {
+        "root": {
             "type": "string",
-            "title": "Start of notification ON period"
-          },
-          "rangehi": {
-            "type": "string",
-            "title": "End of notification ON period"
-          },
-          "inrangenotification": {
-            "title": "In-range notification",
-            "type": "object",
-            "properties": {
-              "key": {
-                "title": "Notification key",
-                "type": "string"
-              },
-              "state": {
-                "title": "Notification state",
-                "type": "string",
-                "default": "normal",
-                "enum": [ "normal", "alert", "warn", "alarm", "emergency" ]
-              },
-              "method": {
-                "title": "Notification methods",
-                "type": "array",
-                "default": [],
-                "items": {
-                  "type": "string",
-                  "enum": [ "visual", "sound" ]
-                },
-                "uniqueItems": true
-              }
-            },
-            "required": [ "key" ]
-          },
-          "outrangenotification": {
-            "title": "Out-of-range notification",
-            "type": "object",
-            "properties": {
-              "key": {
-                "title": "Notification key",
-                "type": "string"
-              },
-              "state": {
-                "title": "Notification state",
-                "type": "string",
-                "default": "normal",
-                "enum": [ "normal", "alert", "warn", "alarm", "emergency" ]
-              },
-              "method": {
-                "title": "Notification methods",
-                "type": "array",
-                "default": [],
-                "items": {
-                    "type": "string",
-                    "enum": [ "visual", "sound" ]
-                },
-                "uniqueItems": true
-              }
-            },
-            "required": [ "key" ]
-          }
+            "title": "Path under which to store sun phase keys",
+            "default": "environment.sunphases"
         },
-        "required": [ "rangelo", "rangehi" ]
-      },
-      "default": [
-        { "rangelo": "dawn", "rangehi": "dusk", "inrangenotification": { "key": "daytime" }, "outrangenotification": { "key": "nighttime" } }
-      ]
-    },
-    "metadata": {
-      "description": "Meta data for each key",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string",
-            "enum": [ "dawn", "dusk", "goldenHour", "goldenHourEnd", "nadir", "nauticalDawn", "nauticalDusk", "night", "nightEnd", "solarNoon", "sunrise", "sunriseEnd", "sunset", "sunsetStart" ]
-          },
-          "description": { "type": "string" },
-          "displayName": { "type": "string" },
-          "longName": { "type": "string" },
-          "shortName": { "type": "string" },
-          "units": { "type": "string" }
+        "interval": {
+            "title": "Heartbeat",
+            "type": "number",
+            "minimum": 0,
+            "default": 600
+        },
+        "notifications": {
+            "type": "array",
+            "title": "Notification rules",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "rangelo": {
+                        "type": "string",
+                        "title": "Start of notification ON period"
+                    },
+                    "rangehi": {
+                        "type": "string",
+                        "title": "End of notification ON period"
+                    },
+                    "inrangenotification": {
+                        "title": "In-range notification",
+                        "type": "object",
+                        "properties": {
+                            "key": {
+                                "title": "Notification key",
+                                "type": "string"
+                            },
+                            "state": {
+                                "title": "Notification state",
+                                "type": "string",
+                                "default": "normal",
+                                "enum": [ "normal", "alert", "warn", "alarm", "emergency" ]
+                            },
+                            "method": {
+                                "title": "Notification methods",
+                                "type": "array",
+                                "default": [],
+                                "items": {
+                                    "type": "string",
+                                    "enum": [ "visual", "sound" ]
+                                },
+                                "uniqueItems": true
+                            }
+                        },
+                        "required": [ "key" ]
+                    },
+                    "outrangenotification": {
+                        "title": "Out-of-range notification",
+                        "type": "object",
+                        "properties": {
+                            "key": {
+                                "title": "Notification key",
+                                "type": "string"
+                            },
+                            "state": {
+                                "title": "Notification state",
+                                "type": "string",
+                                "default": "normal",
+                                "enum": [ "normal", "alert", "warn", "alarm", "emergency" ]
+                            },
+                            "method": {
+                                "title": "Notification methods",
+                                "type": "array",
+                                "default": [],
+                                "items": {
+                                        "type": "string",
+                                        "enum": [ "visual", "sound" ]
+                                },
+                                "uniqueItems": true
+                            }
+                        },
+                        "required": [ "key" ]
+                    }
+                },
+                "required": [ "rangelo", "rangehi" ]
+            },
+            "default": [
+                { "rangelo": "dawn", "rangehi": "dusk", "inrangenotification": { "key": "daytime" }, "outrangenotification": { "key": "nighttime" } }
+            ]
+        },
+        "metadata": {
+            "description": "Meta data for each key",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "enum": [ "dawn", "dusk", "goldenHour", "goldenHourEnd", "nadir", "nauticalDawn", "nauticalDusk", "night", "nightEnd", "solarNoon", "sunrise", "sunriseEnd", "sunset", "sunsetStart" ]
+                    },
+                    "description": { "type": "string" },
+                    "displayName": { "type": "string" },
+                    "longName": { "type": "string" },
+                    "shortName": { "type": "string" },
+                    "units": { "type": "string" }
+                }
+            },
+            "default": [
+                { "key": "dawn", "description": "Morning nautical twilight ends, morning civil twilight starts" },
+                { "key": "dusk", "description": "Evening nautical twilight starts" },
+                { "key": "goldenHour", "description": "Evening golden hour starts" },
+                { "key": "goldenHourEnd", "description": "Soft light, best time for photography ends" },
+                { "key": "nadir", "description": "Darkest moment of the night, sun is in the lowest position" },
+                { "key": "nauticalDawn", "description": "Morning nautical twilight starts" },
+                { "key": "nauticalDusk", "description": "Evening astronomical twilight starts" },
+                { "key": "night", "description": "Dark enough for astronomical observations" },
+                { "key": "nightEnd", "description": "Morning astronomical twilight starts" },
+                { "key": "solarNoon", "description": "Sun is at its highest elevation" },
+                { "key": "sunrise", "description": "Top edge of the sun appears on the horizon" },
+                { "key": "sunriseEnd", "description": "Bottom edge of the sun touches the horizon" },
+                { "key": "sunset", "description": "Sun disappears below the horizon, evening civil twilight starts" },
+                { "key": "sunsetStart", "description": "Bottom edge of the sun touches the horizon" }
+            ]
         }
-      }
     },
-    "default": [
-      { "key": "dawn", "description": "Morning nautical twilight ends, morning civil twilight starts" },
-      { "key": "dusk", "description": "Evening nautical twilight starts" },
-      { "key": "goldenHour", "description": "Evening golden hour starts" },
-      { "key": "goldenHourEnd", "description": "Soft light, best time for photography ends" },
-      { "key": "nadir", "description": "Darkest moment of the night, sun is in the lowest position" },
-      { "key": "nauticalDawn", "description": "Morning nautical twilight starts" },
-      { "key": "nauticalDusk", "description": "Evening astronomical twilight starts" },
-      { "key": "night", "description": "Dark enough for astronomical observations" },
-      { "key": "nightEnd", "description": "Morning astronomical twilight starts" },
-      { "key": "solarNoon", "description": "Sun is at its highest elevation" },
-      { "key": "sunrise", "description": "Top edge of the sun appears on the horizon" },
-      { "key": "sunriseEnd", "description": "Bottom edge of the sun touches the horizon" },
-      { "key": "sunset", "description": "Sun disappears below the horizon, evening civil twilight starts" },
-      { "key": "sunsetStart", "description": "Bottom edge of the sun touches the horizon" }
-    ]
-  },
-  "required": [ "interval", "notifications" ]
+    "required": [ "interval", "notifications" ]
 }
