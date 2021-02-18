@@ -1,4 +1,4 @@
-/**
+/**********************************************************************
  * Copyright 2020 Paul Reeve <preeve@pdjr.eu>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,8 @@ const Delta = require("./lib/signalk-libdelta/Delta.js");
 
 const DEFAULT_OPTIONS_INTERVAL = 600;
 const DEFAULT_OPTIONS_ROOT = "environment.sunphases";
+const PLUGIN_SCHEMA_FILE = __dirname + "/schema.json";
+const PLUGIN_UISCHEMA_FILE = __dirname + "/uischema.json";
 
 module.exports = function (app) {
     var plugin = {};
@@ -29,12 +31,10 @@ module.exports = function (app) {
     plugin.id = 'pdjr-skplugin-sunphases';
     plugin.name = 'Sunlight phase calculator';
     plugin.description = 'Inject sunlight phase paths into Signal K';
+    plugin.schema = (fs.existsSync(PLUGIN_SCHEMA_FILE))?JSON.parse(fs.readFileSync(PLUGIN_SCHEMA_FILE)):{};
+    plugin.uischema = (fs.existsSync(PLUGIN_UISCHEMA_FILE))?JSON.parse(fs.readFileSync(PLUGIN_UISCHEMA_FILE)):{};
 
     const log = new Log(plugin.id, { ncallback: app.setPluginStatus, ecallback: app.setPluginError });
-
-    plugin.schema = (fs.existsSync(__dirname + "/schema.json"))?JSON.parse(fs.readFileSync(__dirname + "/schema.json")):{};
-
-    plugin.uischema = (fs.existsSync(__dirname + "/uischema.json"))?JSON.parse(fs.readFileSync(__dirname + "/uischema.json")):{};
 
     plugin.start = function(options) {
         if ((!options) || (Object.keys(options).length == 0)) {
@@ -60,84 +60,88 @@ module.exports = function (app) {
         // requested interval.
         //
         var positionStream = app.streambundle.getSelfStream("navigation.position");
-        positionStream = (options.interval == 0)?positionStream.take(1):positionStream.debounceImmediate(options.interval * 1000);
+        if (positionStream) { 
+            log.N("waiting for position update");
+            positionStream = (options.interval == 0)?positionStream.take(1):positionStream.debounceImmediate(options.interval * 1000);
+            unsubscribes.push(
+                positionStream.onValue(position => {
+                    var now = new Date();
+                    var today = dayOfYear(now);
+                    var delta = new Delta(app, plugin.id);
 
-        unsubscribes.push(
-            positionStream.onValue(position => {
-                var now = new Date();
-                var today = dayOfYear(now);
-                var delta = new Delta(app, plugin.id);
+                    /**************************************************************
+                     * Add sunphase key updates to <deltas> if this is the first
+                     * time around or if we have entered a new day or if our
+                     * position has changed significantly.
+                     */
 
-                /**************************************************************
-                 * Add sunphase key updates to <deltas> if this is the first
-                 * time around or if we have entered a new day or if our
-                 * position has changed significantly.
-                 */
-
-                options.lastLatitude = 0.0;
-                options.lastLongitude = 0.0;
-                if ((!options.lastupdateday) || (options.lastupdateday != today)    || (Math.abs(options.lastLatitude - position.latitude) > 1.0) || (Math.abs(options.lastLongitude - position.longitude) > 1.0)) {
-                    if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
-                        Object.keys(options.times).forEach(k => delta.addValue(options.root + k, options.times[k].toISOString()));
-                        options.lastupdateday = today;
-                        options.lastLatitude = 0.0;
-                        options.lastLongitude = 0.0;
-                    } else {
-                        log.E("unable to compute sun phase data");
-                    }
-                }
-
-                /**************************************************************
-                 * Check that we actually recovered sun phase data into
-                 * <options.times> and if so, add notification key updates to
-                 * <deltas>.
-                 */
-
-                if (options.times) {
-                    options.notifications.forEach(notification => {
-                        try {
-                            // Build in-range and out-range notification paths.
-                            var nirpath = "notifications." + options.root + notification.inrangenotification.key;
-                            var norpath = "notifications." + options.root + notification.outrangenotification.key;
-                            // Get the times of interest as seconds in this day.
-                            now = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
-                            var start = parseTimeString(notification.rangelo, options.times);
-                            var end = parseTimeString(notification.rangehi, options.times);
-                            // Is this an "in-range" or "out-of-range" update?
-                            if ((now > start) && (now < end)) {
-                                // It's "in-range". Is there an "in-range" notification path?
-                                // If so and we haven't made this update already...
-                                if (notification.inrangenotification.key && (!notification.actioned || (notification.actioned != 1))) {
-                                    // Add a create in-range notification delta to deltas.
-                                    delta.addValue(nirpath, {
-                                        message: "Between " + notification.rangelo + " and " + notification.rangehi,
-                                        state: notification.inrangenotification.state || "normal",
-                                        method: notification.inrangenotification.method || []
-                                    });
-                                    // And add a delete out-of-range notification delta to deltas.
-                                    delta.addValue(norpath, null);
-                                    notification.actioned = 1;
-                                }
-                            } else {
-                                if (notification.outrangenotification.key && (!notification.actioned || (notification.action    != -1))) {
-                                    delta.addValue(norpath, {
-                                        message: "Outside " + notification.rangelo + " and " + notification.rangehi,
-                                        state: notification.outrangenotification.state || "normal",
-                                        method: notification.outrangenotification.method || []
-                                    });
-                                    delta.addValue(nirpath, null);
-                                    notification.actioned = -1;
-                                }
-                            }                            
-                        } catch(e) {
-                            log.E(e);
+                    options.lastLatitude = 0.0;
+                    options.lastLongitude = 0.0;
+                    if ((!options.lastupdateday) || (options.lastupdateday != today)    || (Math.abs(options.lastLatitude - position.latitude) > 1.0) || (Math.abs(options.lastLongitude - position.longitude) > 1.0)) {
+                        if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
+                            Object.keys(options.times).forEach(k => delta.addValue(options.root + k, options.times[k].toISOString()));
+                            options.lastupdateday = today;
+                            options.lastLatitude = 0.0;
+                            options.lastLongitude = 0.0;
+                        } else {
+                            log.E("unable to compute sun phase data");
                         }
-                    });
-                }
-                // Finally, push our collection of deltas to Signal K.
-                delta.commit();
-            })
-        );
+                    }
+
+                    /**************************************************************
+                     * Check that we actually recovered sun phase data into
+                     * <options.times> and if so, add notification key updates to
+                     * <deltas>.
+                     */
+
+                    if (options.times) {
+                        options.notifications.forEach(notification => {
+                            try {
+                                // Build in-range and out-range notification paths.
+                                var nirpath = "notifications." + options.root + notification.inrangenotification.key;
+                                var norpath = "notifications." + options.root + notification.outrangenotification.key;
+                                // Get the times of interest as seconds in this day.
+                                now = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
+                                var start = parseTimeString(notification.rangelo, options.times);
+                                var end = parseTimeString(notification.rangehi, options.times);
+                                // Is this an "in-range" or "out-of-range" update?
+                                if ((now > start) && (now < end)) {
+                                    // It's "in-range". Is there an "in-range" notification path?
+                                    // If so and we haven't made this update already...
+                                    if (notification.inrangenotification.key && (!notification.actioned || (notification.actioned != 1))) {
+                                        // Add a create in-range notification delta to deltas.
+                                        delta.addValue(nirpath, {
+                                            message: "Between " + notification.rangelo + " and " + notification.rangehi,
+                                            state: notification.inrangenotification.state || "normal",
+                                            method: notification.inrangenotification.method || []
+                                        });
+                                        // And add a delete out-of-range notification delta to deltas.
+                                        delta.addValue(norpath, null);
+                                        notification.actioned = 1;
+                                    }
+                                } else {
+                                    if (notification.outrangenotification.key && (!notification.actioned || (notification.action    != -1))) {
+                                        delta.addValue(norpath, {
+                                            message: "Outside " + notification.rangelo + " and " + notification.rangehi,
+                                            state: notification.outrangenotification.state || "normal",
+                                            method: notification.outrangenotification.method || []
+                                        });
+                                        delta.addValue(nirpath, null);
+                                        notification.actioned = -1;
+                                    }
+                                }                            
+                            } catch(e) {
+                                log.E(e);
+                            }
+                        });
+                    }
+                    // Finally, push our collection of deltas to Signal K.
+                    delta.commit();
+                })
+            );
+        } else {
+            log.E("error recovering position stream");
+        }
     }
 
     plugin.stop = function () {
