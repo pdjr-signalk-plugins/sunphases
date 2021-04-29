@@ -65,6 +65,7 @@ module.exports = function (app) {
             positionStream = (options.interval == 0)?positionStream.take(1):positionStream.debounceImmediate(options.interval * 1000);
             unsubscribes.push(
                 positionStream.onValue(position => {
+                    log.N("processing position change for %s", JSON.stringify(position));
                     var now = new Date();
                     var today = dayOfYear(now);
                     var delta = new Delta(app, plugin.id);
@@ -140,7 +141,7 @@ module.exports = function (app) {
                 })
             );
         } else {
-            log.E("error recovering position stream");
+            log.E("stopped: unable to obtain vessel position");
         }
     }
 
