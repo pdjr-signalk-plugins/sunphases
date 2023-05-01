@@ -2,17 +2,43 @@
 
 Inject sunlight phase data into Signal K.
 
-This project implements a plugin for the
-[Signal K Node server](https://github.com/SignalK/signalk-server-node).
+## Background
 
-Reading the [Alarm, alert and notification handling](http://signalk.org/specification/1.0.0/doc/notifications.html)
-section of the Signal K documentation may provide helpful orientation.
+Quite a few things I want to automate on my ship depend upon having
+some notion of daytime, nightime and the transition between the two.
+
+In some situations I want to turn on my anchor light at dusk and turn
+it off at dawn; or maybe ring eight-bells at midday.
+Whatever.
+
+Sometimes the dawn/dusk transition is detected by a sensor or by
+monitoring the output of a solar installation, but my preferred
+solution is based on computation around vessel position.
+
+## Description
 
 __pdjr-skplugin-sunphases__ uses Vladimir Agafonkin's
 [SunCalc](https://github.com/mourner/suncalc)
 library to calculate sunlight phases (times for sunrise, sunset, dusk,
 etc.) for the vessel's current location and injects the resulting time
 values into the Signal K state.
+
+Using these values as a starting point, you can define as many simple
+rules as you need to raise and cancel notifications as sunlight phase
+events occur during the day.
+
+A vanilla installation of __pdjr-skplugin-sunphases__ manages two
+notifications, 'notifications.daytime' and 'notifications.nighttime'. 
+
+
+
+
+This project implements a plugin for the
+[Signal K Node server](https://github.com/SignalK/signalk-server-node).
+
+Reading the [Alarm, alert and notification handling](http://signalk.org/specification/1.0.0/doc/notifications.html)
+section of the Signal K documentation may provide helpful orientation.
+
 
 Using these values as a starting point, you can define as many simple
 rules as you need to raise and cancel notifications as sunlight phase

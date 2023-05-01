@@ -28,8 +28,8 @@ module.exports = function (app) {
     var plugin = {};
     var unsubscribes = [];
 
-    plugin.id = 'pdjr-skplugin-sunphases';
-    plugin.name = 'Sunlight phase calculator';
+    plugin.id = 'sunphases';
+    plugin.name = 'pdjr-signalk-sunphases';
     plugin.description = 'Inject sunlight phase paths into Signal K';
     plugin.schema = (fs.existsSync(PLUGIN_SCHEMA_FILE))?JSON.parse(fs.readFileSync(PLUGIN_SCHEMA_FILE)):{};
     plugin.uischema = (fs.existsSync(PLUGIN_UISCHEMA_FILE))?JSON.parse(fs.readFileSync(PLUGIN_UISCHEMA_FILE)):{};
