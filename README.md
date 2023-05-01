@@ -5,15 +5,10 @@ Inject sunlight phase data into Signal K.
 ## Background
 
 Quite a few things I want to automate on my ship depend upon having
-some notion of daytime, nightime and the transition between the two.
-
-In some situations I want to turn on my anchor light at dusk and turn
-it off at dawn; or maybe ring eight-bells at midday.
+some notion of the phases of a day.
+For example, there are times when I want to turn on my anchor light
+at dusk and turn it off at dawn; or maybe ring eight-bells at midday.
 Whatever.
-
-Sometimes the dawn/dusk transition is detected by a sensor or by
-monitoring the output of a solar installation, but my preferred
-solution is based on computation around vessel position.
 
 ## Description
 
@@ -30,7 +25,9 @@ events occur during the day.
 A vanilla installation of __pdjr-skplugin-sunphases__ manages two
 notifications, 'notifications.daytime' and 'notifications.nighttime'. 
 
+## Configuration
 
+__pdjr-skplugin-sunphases__ is enabled by default and operates autonomously.
 
 
 This project implements a plugin for the
@@ -47,25 +44,8 @@ events occur during the day.
 A vanilla installation of __pdjr-skplugin-sunphases__ manages two
 notifications, 'notifications.daytime' and 'notifications.nighttime'. 
 
-## System requirements
-
-__pdjr-skplugin-sunphases__ has no special installation requirements.
-
-The key 'navigation.position' is used to determine the location to
-which computed sun phase data relates.
-
-## Installation
-
-Download and install __pdjr-skplugin-sunphases__ using the 'Appstore' menu
-option in your Signal K Node server console.
-The plugin can also be obtained from the 
-[project homepage](https://github.com/preeve9534/pdjr-skplugin-sunphases)
-and installed using
-[these instructions](https://github.com/SignalK/signalk-server-node/blob/master/SERVERPLUGINS.md).
-
 ## Using the plugin
 
-__pdjr-skplugin-sunphases__ is enabled by default and operates autonomously.
 
 The plugin can be configured using the Signal K Node server plugin
 configuration GUI.
