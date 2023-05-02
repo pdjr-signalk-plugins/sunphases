@@ -12,20 +12,52 @@ Whatever.
 
 ## Description
 
-__pdjr-skplugin-sunphases__ uses Vladimir Agafonkin's
+__pdjr-skplugin-sunphases__ implements a both a sunphase engine which
+uses Vladimir Agafonkin's
 [SunCalc](https://github.com/mourner/suncalc)
 library to calculate sunlight phases (times for sunrise, sunset, dusk,
 etc.) for the vessel's current location and injects the resulting time
 values into the Signal K state.
+Values are recalculated at midnight local time and each time the
+vessel's position changes significantly.
 
-Using these values as a starting point, you can define as many simple
-rules as you need to raise and cancel notifications as sunlight phase
-events occur during the day.
-
+Additionally the plugin implements a simple rule processor which uses
+the generated sunphase data and a collection of user-defined rules to
+raise notifications advising sunphase conditions.
 A vanilla installation of __pdjr-skplugin-sunphases__ manages two
-notifications, 'notifications.daytime' and 'notifications.nighttime'. 
+such rules which raise a 'notifications.environment.sunphase.daytime'
+notification between dawn and dusk and a
+'notifications.environment.sunphases.nighttime' notification between
+dusk and dawn.
+The user can configure the notification rule set to suit their own
+requirements.  
 
 ## Configuration
+
+The plugin understands the follwing configuration properties.
+
+| Property | Default | Decription |
+| :------- | ------- | :--------- |
+| root     | 'environment.sunphases.' | The path under which to store sun phase keys. |
+| interval | 60      | Time in seconds between potential data updates and rule processing. |
+
+__Heartbeat__ [interval]\
+This required number property defines how frequently the plugin should
+refresh its data.
+At each [interval] the plugin will:
+
+1. Refresh the keys under [root] if the vessel position has changed by
+more than one degree of latitude or longitude or if Zulu time has
+rolled over into a new day.
+
+2. Process all defined notification rules.
+ 
+The default value for [interval] is 600 which will cause the plugin to
+perform a refresh every 10 minutes.
+
+
+
+## Operation
 
 __pdjr-skplugin-sunphases__ is enabled by default and operates autonomously.
 
