@@ -12,23 +12,25 @@ Whatever.
 
 ## Description
 
-__pdjr-skplugin-sunphases__ implements a both a sunphase engine which
-uses Vladimir Agafonkin's
-[SunCalc](https://github.com/mourner/suncalc)
-library to calculate sunlight phases (times for sunrise, sunset, dusk,
-etc.) for the vessel's current location and injects the resulting time
-values into the Signal K state.
-Values are recalculated at midnight local time and each time the
-vessel's position changes significantly.
+__pdjr-skplugin-sunphases__ implements a both a sunphase engine and an
+associated notification generator.
 
-Additionally the plugin implements a simple rule processor which uses
-the generated sunphase data and a collection of user-defined rules to
-raise notifications advising sunphase conditions.
+The sunphase engine injects sunlight phases (times for sunrise, sunset,
+dusk, etc.) into the Signal K state.
+Values are calculated at midnight local time and recaclculated each
+time the vessel's position changes significantly using Vladimir
+Agafonkin's [SunCalc](https://github.com/mourner/suncalc) library.
+
+The notification generator implements a simple rule processor which
+uses sunphase data and a collection of user-defined rules to raise
+notifications advising sunphase conditions.
+
 A vanilla installation of __pdjr-skplugin-sunphases__ manages two
 such rules which raise a 'notifications.environment.sunphase.daytime'
 notification between dawn and dusk and a
 'notifications.environment.sunphases.nighttime' notification between
 dusk and dawn.
+
 The user can configure the notification rule set to suit their own
 requirements.  
 
