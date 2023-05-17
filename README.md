@@ -38,139 +38,66 @@ requirements.
 
 The plugin understands the follwing configuration properties.
 
-| Property | Default | Decription |
-| :------- | ------- | :--------- |
-| root     | 'environment.sunphases.' | The path under which to store sun phase keys. |
-| interval | 60      | Time in seconds between potential data updates and rule processing. |
+| Property      | Default                  | Decription |
+| :------------ | :----------------------- | :--------- |
+| root          | 'environment.sunphases.' | The path under which to store sun phase keys. |
+| heartbeat     | 60                       | Time in seconds between evaluation of data updates and rule processing. |
+| notifications | []                       | Array of notification rules (see below) |
 
-__Heartbeat__ [interval]\
-This required number property defines how frequently the plugin should
+The value of the *root* property determines both the root under which
+sunphase keys will be stored and also the root under which any
+generated notifications will be placed (this will always be 'notifications.*root*').
+
+The *heartbeat* property defines how frequently the plugin should
 refresh its data.
-At each [interval] the plugin will:
+At each *heartbeat* the plugin will:
 
-1. Refresh the keys under [root] if the vessel position has changed by
-more than one degree of latitude or longitude or if Zulu time has
-rolled over into a new day.
+1. Refresh the keys under *root* if the vessel position has changed by
+   more than one degree of latitude or longitude or if Zulu time has
+   rolled over into a new day.
 
 2. Process all defined notification rules.
- 
-The default value for [interval] is 600 which will cause the plugin to
-perform a refresh every 10 minutes.
 
+The default value for *heartbeat* is 60 which will cause the plugin to
+perform a refresh every minute.
+
+The *notifications* array property consists of one or more notification
+rules each of which identifies a time window and the notifications that
+should be raised when the current time of day is within and outside of
+this range.
+
+Each notification rule can include the following properties.
+
+| Property             | Default | Description |
+| :------------------- | :------ | :---------- |
+| rangelo              | (none)  | Required string specifying the in-range start time. |
+| rangehi              | (none)  | Required string specifying the in-range end time. |
+| inrangenotification  | (none)  | Optional object specifying the notification to be raised when the current time of day is between *rangelo* and *rangehi*. |
+| outrangenotification | (none)  | Optional object specifying the notification to be raised when the current time of day is outwith *rangelo* and *rangehi*. |
+
+*rangelo* and *rangehi* can be specified as SunCalc key names
+(optionally with some arithmetic tweaking) or as absolute Zulu times.
+The required format is:
+
+( *key*[(__+__|__-__)*n*(__h__|__m__|__s__)] | *hh*__:__*mm*__:__*ss* )
+
+where *key* is the name of a SunCalc key (and may be all you need).
+
+*inrangenotification* and *outrangenotification* are objects with three
+properties which define a notification.
+
+| Property | Default  | Description |
+| :------- | :------- | :---------- |
+| key      | (none)   | Required string specifying the name under which the notification will be placed (the full key name will be 'notifications.*root*.*key*'). |
+| state    | "normal" | Optional string property specifying the value of the notification state field. |
+| method   | []       | Optional string array suggesting the methods that might be used to anounce the notification. | 
 
 
 ## Operation
 
-__pdjr-skplugin-sunphases__ is enabled by default and operates autonomously.
-
-
-This project implements a plugin for the
-[Signal K Node server](https://github.com/SignalK/signalk-server-node).
-
-Reading the [Alarm, alert and notification handling](http://signalk.org/specification/1.0.0/doc/notifications.html)
-section of the Signal K documentation may provide helpful orientation.
-
-
-Using these values as a starting point, you can define as many simple
-rules as you need to raise and cancel notifications as sunlight phase
-events occur during the day.
-
-A vanilla installation of __pdjr-skplugin-sunphases__ manages two
-notifications, 'notifications.daytime' and 'notifications.nighttime'. 
-
-## Using the plugin
-
-
-The plugin can be configured using the Signal K Node server plugin
-configuration GUI.
-The configuration interface lets you maintain the following properties.
- 
-__Path under which to store sun phase keys__ [root]\
-This required string property tells the plugin where in the Signal K
-data store it should place sun phase data.
-The default value is 'environment.sunphases.'.
-
-The key/values inserted under [root] are those defined as properties in
-the object returned by a call to
-[SunCalc.getTimes()](https://github.com/mourner/suncalc#sunlight-times).
-You can get the plugin to log a list of the generated keys and their
-values by setting the debug key 'sunphases'.
-
-__Heartbeat__ [interval]\
-This required number property defines how frequently the plugin should
-refresh its data.
-At each [interval] the plugin will:
-
-1. Refresh the keys under [root] if the vessel position has changed by
-more than one degree of latitude or longitude or if Zulu time has
-rolled over into a new day.
-
-2. Process all defined notification rules.
- 
-The default value for [interval] is 600 which will cause the plugin to
-perform a refresh every 10 minutes.
-
-__Notification rules__ [notifications]\
-This array property contains a collection of *notification definitions*
-each of whcih identifies a time window and the notifications that
-should be raised when the current time of day is within and outside of
-this range.
-
-Time limits can be specified as SunCalc key names (optionally with some
-arithmetic tweaking) or as absolute Zulu times.
-
-Each object in the notification definition has the following
-properties.
-
-__Start of notification ON period__ [rangelo]\
-This required string property specifies the notification window start
-time.
-The required format for value is:
-
-&nbsp;&nbsp;&nbsp;&nbsp;( *key*[(__+__|__-__)*n*(__h__|__m__|__s__)] | *hh*__:__*mm*__:__*ss* )
-
-where *key* is the name of a SunCalc key (and may be all you need).
-
-__End of notification ON period__ [rangehi]\
-This required string property specifies the notification window end
-time.
-See [rangelo] above for the format considerations.
-
-__In range notification__ [inrangenotification]\
-This set of three properties define the notification that should be
-raised when the current time of day is within the range [rangelo] to
-[rangehi].
-
-__Notification key__ [key]\
-This required string property specifies an key under which the
-notification will be placed.
-The full key path will be 'notifications.*root*.*key*'.
-
-__Notification state__ [state]\
-This optional string property specifies the value of the notification
-state field.
-Choose from the available options.
-The default value is 'normal.
-
-__Notification methods__ [method]\
-This optional property specifies the values of the notification method
-field.
-Choose from the available options.
-The default is to suggest no notification methods.
-
-__Out of range notification__ [outrangenotification]\
-This set of three properties define the notification that should be
-raised when the current time of day is outside of the range [rangelo]
-to [rangehi].
-Notification property semantics are the same as for
-[outrangenotification].
-
-## Debugging and logging
-
-__pdjr-skplugin-sunphases__ understands the 'sunphases' debug token.
+The plugin will update key values and process notification rules once
+every *heartbeat* seconds.
 
 ## Author
 
-Paul Reeve <preeve@pdjr.eu>\
-September 2020
-
+Paul Reeve <preeve_at_pdjr_dot_eu>
