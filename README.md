@@ -90,7 +90,7 @@ properties which define a notification.
 | :------- | :------- | :---------- |
 | key      | (none)   | Required string specifying the name under which the notification will be placed (the full key name will be 'notifications.*root*.*key*'). |
 | state    | "normal" | Optional string property specifying the value of the notification state field. |
-| method   | []       | Optional string array suggesting the methods that might be used to anounce the notification. | 
+| method   | []       | Optional string array suggesting the methods that might be used to anounce the notification. |
 
 ## Operation
 
