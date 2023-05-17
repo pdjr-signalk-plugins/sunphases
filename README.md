@@ -92,7 +92,6 @@ properties which define a notification.
 | state    | "normal" | Optional string property specifying the value of the notification state field. |
 | method   | []       | Optional string array suggesting the methods that might be used to anounce the notification. | 
 
-
 ## Operation
 
 The plugin will update key values and process notification rules once
