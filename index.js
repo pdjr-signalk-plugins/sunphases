@@ -24,7 +24,25 @@ const PLUGIN_DESCRIPTION = 'Inject sunlight phase paths into Signal K';
 
 const DEFAULT_OPTIONS_ROOT = "environment.sunphases.";
 const DEFAULT_OPTIONS_HEARTBEAT = 60;
-const DEFAULT_OPTIONS_NOTIFICATIONS = [];
+const DEFAULT_OPTIONS_NOTIFICATIONS = [
+  { "rangelo": "dawn", "rangehi": "dusk", "inrangenotification": { "key": "daytime" }, "outrangenotification": { "key": "nighttime" } }
+];
+const DEFAULT_OPTIONS_METADATA = [
+  { "key": "dawn", "units": "UTC", "description": "Morning nautical twilight ends, morning civil twilight starts" },
+  { "key": "dusk", "units": "UTC", "description": "Evening nautical twilight starts" },
+  { "key": "goldenHour", "units": "UTC", "description": "Evening golden hour starts" },
+  { "key": "goldenHourEnd", "units": "UTC", "description": "Soft light, best time for photography ends" },
+  { "key": "nadir", "units": "UTC", "description": "Darkest moment of the night, sun is in the lowest position" },
+  { "key": "nauticalDawn", "units": "UTC", "description": "Morning nautical twilight starts" },
+  { "key": "nauticalDusk", "units": "UTC", "description": "Evening astronomical twilight starts" },
+  { "key": "night", "units": "UTC", "description": "Dark enough for astronomical observations" },
+  { "key": "nightEnd", "units": "UTC", "description": "Morning astronomical twilight starts" },
+  { "key": "solarNoon", "units": "UTC", "description": "Sun is at its highest elevation" },
+  { "key": "sunrise", "units": "UTC", "description": "Top edge of the sun appears on the horizon" },
+  { "key": "sunriseEnd", "units": "UTC", "description": "Bottom edge of the sun touches the horizon" },
+  { "key": "sunset", "units": "UTC", "description": "Sun disappears below the horizon, evening civil twilight starts" },
+  { "key": "sunsetStart", "units": "UTC", "description": "Bottom edge of the sun touches the horizon" }
+];
 
 module.exports = function (app) {
   var plugin = {};
@@ -76,7 +94,13 @@ module.exports = function (app) {
                   "default": "normal",
                   "enum": [ "normal", "alert", "warn", "alarm", "emergency" ]
                 },
-                "method": { "title": "Notification methods", "type": "array", "default": [], "items": { "type": "string", "enum": [ "visual", "sound" ] }, "uniqueItems": true }
+                "method": {
+                  "title": "Notification methods",
+                  "type": "array",
+                  "default": [],
+                  "items": { "type": "string", "enum": [ "visual", "sound" ] },
+                  "uniqueItems": true
+                }
               },
               "required": [ "key" ]
             },
@@ -109,47 +133,39 @@ module.exports = function (app) {
             }
           },
           "required": [ "rangelo", "rangehi" ]
-        },
-        "default": [
-        { "rangelo": "dawn", "rangehi": "dusk", "inrangenotification": { "key": "daytime" }, "outrangenotification": { "key": "nighttime" } }
-        ]
-      },
-      "metadata": {
-      "description": "Meta data for each key",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string",
-            "enum": [ "dawn", "dusk", "goldenHour", "goldenHourEnd", "nadir", "nauticalDawn", "nauticalDusk", "night", "nightEnd", "solarNoon", "sunrise", "sunriseEnd", "sunset", "sunsetStart" ]
-          },
-          "description": { "type": "string" },
-          "displayName": { "type": "string" },
-          "longName": { "type": "string" },
-          "shortName": { "type": "string" },
-          "units": { "type": "string" }
         }
       },
-      "default": [
-        { "key": "dawn", "description": "Morning nautical twilight ends, morning civil twilight starts" },
-        { "key": "dusk", "description": "Evening nautical twilight starts" },
-        { "key": "goldenHour", "description": "Evening golden hour starts" },
-        { "key": "goldenHourEnd", "description": "Soft light, best time for photography ends" },
-        { "key": "nadir", "description": "Darkest moment of the night, sun is in the lowest position" },
-        { "key": "nauticalDawn", "description": "Morning nautical twilight starts" },
-        { "key": "nauticalDusk", "description": "Evening astronomical twilight starts" },
-        { "key": "night", "description": "Dark enough for astronomical observations" },
-        { "key": "nightEnd", "description": "Morning astronomical twilight starts" },
-        { "key": "solarNoon", "description": "Sun is at its highest elevation" },
-        { "key": "sunrise", "description": "Top edge of the sun appears on the horizon" },
-        { "key": "sunriseEnd", "description": "Bottom edge of the sun touches the horizon" },
-        { "key": "sunset", "description": "Sun disappears below the horizon, evening civil twilight starts" },
-        { "key": "sunsetStart", "description": "Bottom edge of the sun touches the horizon" }
-      ]
+      "metadata": {
+        "description": "Meta data for each key",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "default": [],
+          "properties": {
+            "key": {
+              "type": "string",
+              "enum": [ "dawn", "dusk", "goldenHour", "goldenHourEnd", "nadir", "nauticalDawn", "nauticalDusk", "night", "nightEnd", "solarNoon", "sunrise", "sunriseEnd", "sunset", "sunsetStart" ]
+            },
+            "description": {
+              "type": "string"
+            },
+            "displayName": {
+              "type": "string"
+            },
+            "longName": {
+              "type": "string"
+            },
+            "shortName": {
+              "type": "string"
+            },
+            "units": {
+              "type": "string"
+            }
+          }
+        }
       }
     },
-    "required": [ "heartbeat", "notifications" ]
+    "required": [ "root", "heartneat" ]
   };
     
   plugin.uischema = {};
@@ -162,6 +178,7 @@ module.exports = function (app) {
       options.root = (options.root)?options.root:DEFAULT_OPTIONS_ROOT;
       options.heartbeat = (options.heartbeat)?options.heartbeat:DEFAULT_OPTIONS_HEARTBEAT;
       options.notifications = (options.notifications)?options.notifications:DEFAULT_OPTIONS_NOTIFICATIONS;
+      options.metadata = (options.metadata)?options.metadata:DEFAULT_OPTIONS_METADATA;
       
       log.N("maintaining keys in '%s'", options.root);
 
@@ -173,7 +190,7 @@ module.exports = function (app) {
         options.metadata.map(entry => delta.addMeta(options.root + entry.key, { "description": entry.description, "units": "ISO-8601 (UTC)" }));
         delta.commit();
       } else {
-        log.W("no metadata available - please add to app schema");
+        log.W("no metadata available - please add to plugin configuration schema");
       }
 
       // Get a stream that reports vessel position and sample it at the
@@ -182,7 +199,7 @@ module.exports = function (app) {
       var positionStream = app.streambundle.getSelfStream("navigation.position");
       if (positionStream) { 
         log.N("waiting for position update");
-        positionStream = (options.interval == 0)?positionStream.take(1):positionStream.debounceImmediate(options.interval * 1000);
+        positionStream = (options.heartbeat == 0)?positionStream.take(1):positionStream.debounceImmediate(options.heartbeat * 1000);
         unsubscribes.push(
           positionStream.onValue(position => {
             log.N("processing position change for %s", JSON.stringify(position));
