@@ -175,10 +175,13 @@ module.exports = function (app) {
   plugin.start = function(options) {
 
     if (options) {
-      options.root = (options.root)?options.root:DEFAULT_OPTIONS_ROOT;
-      options.heartbeat = (options.heartbeat)?options.heartbeat:DEFAULT_OPTIONS_HEARTBEAT;
-      options.notifications = (options.notifications)?options.notifications:DEFAULT_OPTIONS_NOTIFICATIONS;
-      options.metadata = (options.metadata)?options.metadata:DEFAULT_OPTIONS_METADATA;
+      
+      var optionsChanged = false;
+      if (!options.root) { options.root = DEFAULT_OPTIONS_ROOT; optionsChanged = true; }
+      if (!options.heartbeat) { options.heartbeat = DEFAULT_OPTIONS_HEARTBEAT; optionsChanged = true; }
+      if (!options.notifications) { options.notifications = DEFAULT_OPTIONS_NOTIFICATIONS; optionsChanged = true; }
+      if (!options.metadata) { options.metadata = DEFAULT_OPTIONS_METADATA; optionsChanged = true; }
+      if (optionsChanged) app.savePluginOptions(options, () => { log.N("updated configuration on disk"); });
       
       log.N("maintaining keys in '%s'", options.root);
 
