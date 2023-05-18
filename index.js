@@ -21,91 +21,36 @@ const Delta = require("./lib/signalk-libdelta/Delta.js");
 const PLUGIN_ID = 'sunphases';
 const PLUGIN_NAME = 'pdjr-signalk-sunphases';
 const PLUGIN_DESCRIPTION = 'Inject sunlight phase paths into Signal K';
-
-const DEFAULT_OPTIONS_ROOT = "environment.sunphases.";
-const DEFAULT_OPTIONS_HEARTBEAT = 60;
-const DEFAULT_OPTIONS_NOTIFICATIONS = [
-  { "rangelo": "dawn", "rangehi": "dusk", "inrangenotification": { "key": "daytime" }, "outrangenotification": { "key": "nighttime" } }
-];
-const DEFAULT_OPTIONS_METADATA = [
-  { "key": "dawn", "units": "UTC", "description": "Morning nautical twilight ends, morning civil twilight starts" },
-  { "key": "dusk", "units": "UTC", "description": "Evening nautical twilight starts" },
-  { "key": "goldenHour", "units": "UTC", "description": "Evening golden hour starts" },
-  { "key": "goldenHourEnd", "units": "UTC", "description": "Soft light, best time for photography ends" },
-  { "key": "nadir", "units": "UTC", "description": "Darkest moment of the night, sun is in the lowest position" },
-  { "key": "nauticalDawn", "units": "UTC", "description": "Morning nautical twilight starts" },
-  { "key": "nauticalDusk", "units": "UTC", "description": "Evening astronomical twilight starts" },
-  { "key": "night", "units": "UTC", "description": "Dark enough for astronomical observations" },
-  { "key": "nightEnd", "units": "UTC", "description": "Morning astronomical twilight starts" },
-  { "key": "solarNoon", "units": "UTC", "description": "Sun is at its highest elevation" },
-  { "key": "sunrise", "units": "UTC", "description": "Top edge of the sun appears on the horizon" },
-  { "key": "sunriseEnd", "units": "UTC", "description": "Bottom edge of the sun touches the horizon" },
-  { "key": "sunset", "units": "UTC", "description": "Sun disappears below the horizon, evening civil twilight starts" },
-  { "key": "sunsetStart", "units": "UTC", "description": "Bottom edge of the sun touches the horizon" }
-];
-
-module.exports = function (app) {
-  var plugin = {};
-  var unsubscribes = [];
-
-  plugin.id = PLUGIN_ID;
-  plugin.name = PLUGIN_NAME;
-  plugin.description = PLUGIN_DESCRIPTION;
-
-  plugin.schema = {
-    "type": "object",
-    "properties": {
-      "root": {
-        "type": "string",
-        "title": "Path under which to store sun phase keys",
-        "default": "environment.sunphases."
-      },
-      "heartbeat": {
-        "title": "Heartbeat",
-        "type": "number",
-        "minimum": 0,
-        "default": 60
-      },
-      "notifications": {
-        "type": "array",
-        "title": "Notification rules",
-        "items": {
-          "type": "object",
-          "properties": {
-            "rangelo": {
-              "type": "string",
-              "title": "Start of notification ON period"
-            },
-            "rangehi": {
-              "type": "string",
-              "title": "End of notification ON period"
-            },
-            "inrangenotification": {
-              "title": "In-range notification",
-              "type": "object",
-              "properties": {
-                "key": {
-                  "title": "Notification key",
-                  "type": "string"
-                },
-                "state": {
-                  "title": "Notification state",
-                  "type": "string",
-                  "default": "normal",
-                  "enum": [ "normal", "alert", "warn", "alarm", "emergency" ]
-                },
-                "method": {
-                  "title": "Notification methods",
-                  "type": "array",
-                  "default": [],
-                  "items": { "type": "string", "enum": [ "visual", "sound" ] },
-                  "uniqueItems": true
-                }
-              },
-              "required": [ "key" ]
-            },
-            "outrangenotification": {
-            "title": "Out-of-range notification",
+const PLUGIN_SCHEMA = {
+  "type": "object",
+  "properties": {
+    "root": {
+      "type": "string",
+      "title": "Path under which to store sun phase keys",
+      "default": "environment.sunphases."
+    },
+    "heartbeat": {
+      "title": "Heartbeat",
+      "type": "number",
+      "minimum": 0,
+      "default": 60
+    },
+    "notifications": {
+      "type": "array",
+      "title": "Notification rules",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rangelo": {
+            "type": "string",
+            "title": "Start of notification ON period"
+          },
+          "rangehi": {
+            "type": "string",
+            "title": "End of notification ON period"
+          },
+          "inrangenotification": {
+            "title": "In-range notification",
             "type": "object",
             "properties": {
               "key": {
@@ -122,91 +67,142 @@ module.exports = function (app) {
                 "title": "Notification methods",
                 "type": "array",
                 "default": [],
-                "items": {
-                  "type": "string",
-                  "enum": [ "visual", "sound" ]
-                },
+                "items": { "type": "string", "enum": [ "visual", "sound" ] },
                 "uniqueItems": true
               }
             },
             "required": [ "key" ]
-            }
           },
-          "required": [ "rangelo", "rangehi" ]
-        }
-      },
-      "metadata": {
-        "description": "Meta data for each key",
-        "type": "array",
-        "items": {
+          "outrangenotification": {
+          "title": "Out-of-range notification",
           "type": "object",
-          "default": [],
           "properties": {
             "key": {
+              "title": "Notification key",
+              "type": "string"
+            },
+            "state": {
+              "title": "Notification state",
               "type": "string",
-              "enum": [ "dawn", "dusk", "goldenHour", "goldenHourEnd", "nadir", "nauticalDawn", "nauticalDusk", "night", "nightEnd", "solarNoon", "sunrise", "sunriseEnd", "sunset", "sunsetStart" ]
+              "default": "normal",
+              "enum": [ "normal", "alert", "warn", "alarm", "emergency" ]
             },
-            "description": {
-              "type": "string"
-            },
-            "displayName": {
-              "type": "string"
-            },
-            "longName": {
-              "type": "string"
-            },
-            "shortName": {
-              "type": "string"
-            },
-            "units": {
-              "type": "string"
+            "method": {
+              "title": "Notification methods",
+              "type": "array",
+              "default": [],
+              "items": {
+                "type": "string",
+                "enum": [ "visual", "sound" ]
+              },
+              "uniqueItems": true
             }
+          },
+          "required": [ "key" ]
+          }
+        },
+        "required": [ "rangelo", "rangehi" ]
+      }
+    },
+    "metadata": {
+      "description": "Meta data for each key",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "default": [],
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [ "dawn", "dusk", "goldenHour", "goldenHourEnd", "nadir", "nauticalDawn", "nauticalDusk", "night", "nightEnd", "solarNoon", "sunrise", "sunriseEnd", "sunset", "sunsetStart" ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "longName": {
+            "type": "string"
+          },
+          "shortName": {
+            "type": "string"
+          },
+          "units": {
+            "type": "string"
           }
         }
       }
-    },
-    "required": [ "root", "heartneat" ]
-  };
-    
-  plugin.uischema = {};
+    }
+  },
+  "required": [ "root", "heartneat" ]
+};
+const PLUGIN_UISCHEMA = {};
 
-  const log = new Log(plugin.id, { ncallback: app.setPluginStatus, ecallback: app.setPluginError });
+const DEFAULT_OPTIONS_ROOT = "environment.sunphases.";
+const DEFAULT_OPTIONS_HEARTBEAT = 60;
+const DEFAULT_OPTIONS_NOTIFICATIONS = [
+  { "rangelo": "dawn", "rangehi": "dusk", "inrangenotification": { "key": "daytime" }, "outrangenotification": { "key": "nighttime" } }
+];
+const DEFAULT_OPTIONS_METADATA = [
+  { "key": "dawn", "units": "ISO8601 (UTC)", "description": "Morning nautical twilight ends, morning civil twilight starts" },
+  { "key": "dusk", "units": "ISO8601 (UTC)", "description": "Evening nautical twilight starts" },
+  { "key": "goldenHour", "units": "ISO8601 (UTC)", "description": "Evening golden hour starts" },
+  { "key": "goldenHourEnd", "units": "ISO8601 (UTC)", "description": "Soft light, best time for photography ends" },
+  { "key": "nadir", "units": "ISO8601 (UTC)", "description": "Darkest moment of the night, sun is in the lowest position" },
+  { "key": "nauticalDawn", "units": "ISO8601 (UTC)", "description": "Morning nautical twilight starts" },
+  { "key": "nauticalDusk", "units": "ISO8601 (UTC)", "description": "Evening astronomical twilight starts" },
+  { "key": "night", "units": "ISO8601 (UTC)", "description": "Dark enough for astronomical observations" },
+  { "key": "nightEnd", "units": "ISO8601 (UTC)", "description": "Morning astronomical twilight starts" },
+  { "key": "solarNoon", "units": "ISO8601 (UTC)", "description": "Sun is at its highest elevation" },
+  { "key": "sunrise", "units": "ISO8601 (UTC)", "description": "Top edge of the sun appears on the horizon" },
+  { "key": "sunriseEnd", "units": "ISO8601 (UTC)", "description": "Bottom edge of the sun touches the horizon" },
+  { "key": "sunset", "units": "ISO8601 (UTC)", "description": "Sun disappears below the horizon, evening civil twilight starts" },
+  { "key": "sunsetStart", "units": "ISO8601 (UTC)", "description": "Bottom edge of the sun touches the horizon" }
+];
+
+module.exports = function (app) {
+  var plugin = {};
+  var unsubscribes = [];
+
+  plugin.id = PLUGIN_ID;
+  plugin.name = PLUGIN_NAME;
+  plugin.description = PLUGIN_DESCRIPTION;
+  plugin.schema = PLUGIN_SCHEMA;
+  plugin.uischema = PLUGIN_UISCHEMA;
+
 
   plugin.start = function(options) {
-
     if (options) {
-      
+      const log = new Log(plugin.id, { ncallback: app.setPluginStatus, ecallback: app.setPluginError });
+      var delta = new Delta(app, plugin.id);
+
+      // Make sure configuration exists and is complete.
+      //
       var optionsChanged = false;
       if (options.interval) { options = versionOneCompatabilityFix(options); optionsChanged = true; }
       if (!options.root) { options.root = DEFAULT_OPTIONS_ROOT; optionsChanged = true; }
       if (!options.heartbeat) { options.heartbeat = DEFAULT_OPTIONS_HEARTBEAT; optionsChanged = true; }
       if (!options.notifications) { options.notifications = DEFAULT_OPTIONS_NOTIFICATIONS; optionsChanged = true; }
       if (!options.metadata) { options.metadata = DEFAULT_OPTIONS_METADATA; optionsChanged = true; }
-      if (optionsChanged) app.savePluginOptions(options, () => { log.N("updated configuration on disk"); });
+      if (optionsChanged) app.savePluginOptions(options, () => { log.N("updated configuration on disk", false); });
       
       log.N("maintaining keys in '%s'", options.root);
 
-      var delta = new Delta(app, plugin.id);
-
       // Publish meta information for all maintained keys
       //
-      if ((options.metadata) && Array.isArray(options.metadata) && (options.metadata.length > 0)) {
-        options.metadata.map(entry => delta.addMeta(options.root + entry.key, { "description": entry.description, "units": "ISO-8601 (UTC)" }));
-        delta.commit();
-      } else {
-        log.W("no metadata available - please add to plugin configuration schema");
-      }
-
+      options.metadata.map(entry => delta.addMeta(options.root + entry.key, { "description": entry.description, "units": entry.units }));
+      delta.commit().clear();
+      
       // Get a stream that reports vessel position and sample it at the
       // requested interval.
       //
       var positionStream = app.streambundle.getSelfStream("navigation.position");
       if (positionStream) { 
-        log.N("waiting for position update");
+        log.N("waiting for position update", false);
         positionStream = (options.heartbeat == 0)?positionStream.take(1):positionStream.debounceImmediate(options.heartbeat * 1000);
         unsubscribes.push(
           positionStream.onValue(position => {
-            log.N("processing position change for %s", JSON.stringify(position));
+            log.N("processing position change for %s", JSON.stringify(position), false);
             var now = new Date();
             var today = dayOfYear(now);
             var delta = new Delta(app, plugin.id);
@@ -276,7 +272,7 @@ module.exports = function (app) {
               });
             }
             // Finally, push our collection of deltas to Signal K.
-            delta.commit();
+            delta.commit().clear();
           })
         );
       } else {
