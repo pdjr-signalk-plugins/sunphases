@@ -170,7 +170,6 @@ module.exports = function (app) {
   plugin.schema = PLUGIN_SCHEMA;
   plugin.uischema = PLUGIN_UISCHEMA;
 
-
   plugin.start = function(options) {
     if (options) {
       const log = new Log(plugin.id, { ncallback: app.setPluginStatus, ecallback: app.setPluginError });
