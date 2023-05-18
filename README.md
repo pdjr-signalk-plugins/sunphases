@@ -12,7 +12,7 @@ Whatever.
 
 ## Description
 
-__pdjr-skplugin-sunphases__ implements a both a sunphase engine and an
+__pdjr-skplugin-sunphases__ implements both a sunphase engine and an
 associated notification generator.
 
 The sunphase engine injects sunlight phases (times for sunrise, sunset,
@@ -21,20 +21,23 @@ Values are calculated at midnight local time and recaclculated each
 time the vessel's position changes significantly using Vladimir
 Agafonkin's [SunCalc](https://github.com/mourner/suncalc) library.
 
-The notification generator implements a simple rule processor which
-uses sunphase data and a collection of user-defined rules to raise
-notifications advising sunphase conditions.
+The notification generator uses a collection of user-defined rules to
+test local time against sunphase data and raise notifications based on
+the result.
 
-A vanilla installation of __pdjr-skplugin-sunphases__ manages two
-such rules which raise a 'notifications.environment.sunphase.daytime'
-notification between dawn and dusk and a
-'notifications.environment.sunphases.nighttime' notification between
-dusk and dawn.
+A vanilla installation of __pdjr-skplugin-sunphases__ includes a rule
+which raise the notifications
+'notifications.environment.sunphase.daytime' between dawn and dusk and
+'notifications.environment.sunphases.nighttime' between dusk and dawn.
 
 The user can configure the notification rule set to suit their own
 requirements.  
 
 ## Configuration
+
+The first time the plugin executes after installation it will create a
+default configuration file which the user can modify to suit their own
+needs.
 
 The plugin understands the follwing configuration properties.
 
@@ -63,7 +66,7 @@ perform a refresh every minute.
 
 The *notifications* array property consists of one or more notification
 rules each of which identifies a time window and the notifications that
-should be raised when the current time of day is within and outside of
+should be raised when the current time of day is within and outwith
 this range.
 
 Each notification rule can include the following properties.
