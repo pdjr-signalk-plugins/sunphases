@@ -177,6 +177,7 @@ module.exports = function (app) {
     if (options) {
       
       var optionsChanged = false;
+      if (options.interval) { options = versionOneCompatabilityFix(options); optionsChanged = true; }
       if (!options.root) { options.root = DEFAULT_OPTIONS_ROOT; optionsChanged = true; }
       if (!options.heartbeat) { options.heartbeat = DEFAULT_OPTIONS_HEARTBEAT; optionsChanged = true; }
       if (!options.notifications) { options.notifications = DEFAULT_OPTIONS_NOTIFICATIONS; optionsChanged = true; }
@@ -345,6 +346,14 @@ module.exports = function (app) {
       throw "error parsing '" + s + "'";
     }
     return(retval);
+  }
+
+  function versionOneCompatabilityFix(options) {
+    if (options.interval) {
+      options.heartbeat = options.interval;
+      delete options.interval;
+    }
+    return(options);
   }
 
   return plugin
