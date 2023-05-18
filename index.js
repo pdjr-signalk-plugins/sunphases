@@ -171,9 +171,10 @@ module.exports = function (app) {
   plugin.uischema = PLUGIN_UISCHEMA;
 
   plugin.start = function(options) {
+    const log = new Log(plugin.id, { ncallback: app.setPluginStatus, ecallback: app.setPluginError });
+    var delta = new Delta(app, plugin.id);
+
     if (options) {
-      const log = new Log(plugin.id, { ncallback: app.setPluginStatus, ecallback: app.setPluginError });
-      var delta = new Delta(app, plugin.id);
 
       // Make sure configuration exists and is complete.
       //
