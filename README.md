@@ -45,11 +45,12 @@ The plugin understands the follwing configuration properties.
 | :------------ | :----------------------- | :--------- |
 | root          | 'environment.sunphases.' | The path under which to store sun phase keys. |
 | heartbeat     | 60                       | Time in seconds between evaluation of data updates and rule processing. |
-| notifications | []                       | Array of notification rules (see below) |
+| notifications | []                       | Array of notification rules (see below). |
+| metadata      | See below.               | Array of meta-data properties for sunphase keys. |
 
-The value of the *root* property determines both the root under which
-sunphase keys will be stored and also the root under which any
-generated notifications will be placed (this will always be 'notifications.*root*').
+The *root* property value determines both the root under which sunphase
+keys will be stored and also the root under which any generated
+notifications will be placed (this will always be 'notifications.*root*').
 
 The *heartbeat* property defines how frequently the plugin should
 refresh its data.
@@ -61,13 +62,10 @@ At each *heartbeat* the plugin will:
 
 2. Process all defined notification rules.
 
-The default value for *heartbeat* is 60 which will cause the plugin to
-perform a refresh every minute.
-
-The *notifications* array property consists of one or more notification
-rules each of which identifies a time window and the notifications that
-should be raised when the current time of day is within and outwith
-this range.
+The *notifications* property is an array of of one or more
+*notification* rules each of which identifies a time window and the
+notifications that should be raised when the current time of day is
+within and outwith this range.
 
 Each notification rule can include the following properties.
 
@@ -94,6 +92,10 @@ properties which define a notification.
 | key      | (none)   | Required string specifying the name under which the notification will be placed (the full key name will be 'notifications.*root*.*key*'). |
 | state    | "normal" | Optional string property specifying the value of the notification state field. |
 | method   | []       | Optional string array suggesting the methods that might be used to anounce the notification. |
+
+The *metadata* property is an array of data supplying the meta-data
+entries for each of the generated sunphase keys.
+It is unlikely that you will want or need to change the default values.
 
 ## Operation
 
