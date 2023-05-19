@@ -9,22 +9,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/preeve9534/pdjr-skplugin-sunphases.git"
+    "url": "git+https://github.com/pdjr-signalk/pdjr-skplugin-sunphases.git"
   },
   "keywords": [
     "signalk-node-server-plugin",
-    "signalk-category-utility",
-    "signalk",
-    "sunphases",
-    "suncalc",
-    "plugin"
+    "signalk-category-notifications",
+    "signalk-category-utility"
   ],
   "author": "Paul Reeve <preeve@pdjr.eu>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/preeve9534/pdjr-skplugin-sunphases/issues"
+    "url": "https://github.com/pdjr-signalk/pdjr-skplugin-sunphases/issues"
   },
-  "homepage": "https://github.com/preeve9534/pdjr-skplugin-sunphases#readme",
+  "homepage": "https://github.com/pdjr-signalk/pdjr-skplugin-sunphases#readme",
   "dependencies": {
     "baconjs": "^1.0.1",
     "sprintf-js": "^1.1.2",
