@@ -138,27 +138,29 @@ const PLUGIN_SCHEMA = {
 };
 const PLUGIN_UISCHEMA = {};
 
-const DEFAULT_OPTIONS_ROOT = "environment.sunphases.";
-const DEFAULT_OPTIONS_HEARTBEAT = 60;
-const DEFAULT_OPTIONS_NOTIFICATIONS = [
-  { "rangelo": "dawn", "rangehi": "dusk", "inrangenotification": { "key": "daytime" }, "outrangenotification": { "key": "nighttime" } }
-];
-const DEFAULT_OPTIONS_METADATA = [
-  { "key": "dawn", "units": "ISO8601 (UTC)", "description": "Morning nautical twilight ends, morning civil twilight starts" },
-  { "key": "dusk", "units": "ISO8601 (UTC)", "description": "Evening nautical twilight starts" },
-  { "key": "goldenHour", "units": "ISO8601 (UTC)", "description": "Evening golden hour starts" },
-  { "key": "goldenHourEnd", "units": "ISO8601 (UTC)", "description": "Soft light, best time for photography ends" },
-  { "key": "nadir", "units": "ISO8601 (UTC)", "description": "Darkest moment of the night, sun is in the lowest position" },
-  { "key": "nauticalDawn", "units": "ISO8601 (UTC)", "description": "Morning nautical twilight starts" },
-  { "key": "nauticalDusk", "units": "ISO8601 (UTC)", "description": "Evening astronomical twilight starts" },
-  { "key": "night", "units": "ISO8601 (UTC)", "description": "Dark enough for astronomical observations" },
-  { "key": "nightEnd", "units": "ISO8601 (UTC)", "description": "Morning astronomical twilight starts" },
-  { "key": "solarNoon", "units": "ISO8601 (UTC)", "description": "Sun is at its highest elevation" },
-  { "key": "sunrise", "units": "ISO8601 (UTC)", "description": "Top edge of the sun appears on the horizon" },
-  { "key": "sunriseEnd", "units": "ISO8601 (UTC)", "description": "Bottom edge of the sun touches the horizon" },
-  { "key": "sunset", "units": "ISO8601 (UTC)", "description": "Sun disappears below the horizon, evening civil twilight starts" },
-  { "key": "sunsetStart", "units": "ISO8601 (UTC)", "description": "Bottom edge of the sun touches the horizon" }
-];
+const DEFAULT_OPTIONS = {
+  "root": "environment.sunphases.",
+  "heartbeat": 60,
+  "notifications": [
+    { "rangelo": "dawn", "rangehi": "dusk", "inrangenotification": { "key": "daytime" }, "outrangenotification": { "key": "nighttime" } }
+  ],
+  "metadata": [
+    { "key": "dawn", "units": "ISO8601 (UTC)", "description": "Morning nautical twilight ends, morning civil twilight starts" },
+    { "key": "dusk", "units": "ISO8601 (UTC)", "description": "Evening nautical twilight starts" },
+    { "key": "goldenHour", "units": "ISO8601 (UTC)", "description": "Evening golden hour starts" },
+    { "key": "goldenHourEnd", "units": "ISO8601 (UTC)", "description": "Soft light, best time for photography ends" },
+    { "key": "nadir", "units": "ISO8601 (UTC)", "description": "Darkest moment of the night, sun is in the lowest position" },
+    { "key": "nauticalDawn", "units": "ISO8601 (UTC)", "description": "Morning nautical twilight starts" },
+    { "key": "nauticalDusk", "units": "ISO8601 (UTC)", "description": "Evening astronomical twilight starts" },
+    { "key": "night", "units": "ISO8601 (UTC)", "description": "Dark enough for astronomical observations" },
+    { "key": "nightEnd", "units": "ISO8601 (UTC)", "description": "Morning astronomical twilight starts" },
+    { "key": "solarNoon", "units": "ISO8601 (UTC)", "description": "Sun is at its highest elevation" },
+    { "key": "sunrise", "units": "ISO8601 (UTC)", "description": "Top edge of the sun appears on the horizon" },
+    { "key": "sunriseEnd", "units": "ISO8601 (UTC)", "description": "Bottom edge of the sun touches the horizon" },
+    { "key": "sunset", "units": "ISO8601 (UTC)", "description": "Sun disappears below the horizon, evening civil twilight starts" },
+    { "key": "sunsetStart", "units": "ISO8601 (UTC)", "description": "Bottom edge of the sun touches the horizon" }
+  ]
+};
 
 module.exports = function (app) {
   var plugin = {};
@@ -175,24 +177,28 @@ module.exports = function (app) {
 
   plugin.start = function(options) {
 
-    if (options) {
-
-      // Make sure configuration exists and is complete.
-      //
-      var optionsChanged = false;
-      if (options.interval) { options = versionOneCompatabilityFix(options); optionsChanged = true; }
-      if (!options.root) { options.root = DEFAULT_OPTIONS_ROOT; optionsChanged = true; }
-      if (!options.heartbeat) { options.heartbeat = DEFAULT_OPTIONS_HEARTBEAT; optionsChanged = true; }
-      if (!options.notifications) { options.notifications = DEFAULT_OPTIONS_NOTIFICATIONS; optionsChanged = true; }
-      if (!options.metadata) { options.metadata = DEFAULT_OPTIONS_METADATA; optionsChanged = true; }
-      if (optionsChanged) app.savePluginOptions(options, () => { log.N("updated configuration on disk", false); });
+    // If configuration is empty then initialise with default and
+    // save to disk.
+    if (Object.keys(options).length === 0) {
+      options = DEFAULT_OPTIONS;
+      app.savePluginOptions(options, () => { log.N("default configuration saved to disk", false); });
+    } else {
+      if (options.interval) {
+        options.heartbeat = options.interval;
+        delete options.interval;
+        app.savePluginOptions(options, () => { log.N("existing legacy configuration updated", false); });
+      }
+    }
       
-      log.N("maintaining keys in '%s'", options.root);
+    if ((options.root) && (options.heartbeat)) {
+
+      log.N("maintaining keys in '%s' (heartbeat is %ds)", options.root, options.heartbeat);
 
       // Publish meta information for all maintained keys
-      //
-      options.metadata.map(entry => delta.addMeta(options.root + entry.key, { "description": entry.description, "units": entry.units }));
-      delta.commit().clear();
+      if (options.metadata) {
+        options.metadata.map(entry => delta.addMeta(options.root + entry.key, { "description": entry.description, "units": entry.units }));
+        delta.commit().clear();
+      }
       
       // Get a stream that reports vessel position and sample it at the
       // requested interval.
@@ -286,24 +292,6 @@ module.exports = function (app) {
     plugin.unsubscribes.forEach(f => f())
   }
 
-  /******************************************************************
-   * Return a delta from <pairs> which can be a single value of the
-   * form { path, value } or an array of such values.
-   */
-
-  function makeDelta(pluginId, pairs, type="values") {
-    pairs = (Array.isArray(pairs))?pairs:[pairs]; 
-    return({
-      "updates": [
-        {
-          "source": { "type": "plugin", "src": pluginId, },
-          "timestamp": (new Date()).toISOString(),
-          [type]: pairs
-        }
-      ]
-    });
-  }
-
   function dayOfYear(date){
     return (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(date.getFullYear(), 0, 0)) / 24 / 60 / 60 / 1000;
   }
@@ -343,14 +331,6 @@ module.exports = function (app) {
       throw "error parsing '" + s + "'";
     }
     return(retval);
-  }
-
-  function versionOneCompatabilityFix(options) {
-    if (options.interval) {
-      options.heartbeat = options.interval;
-      delete options.interval;
-    }
-    return(options);
   }
 
   return plugin
