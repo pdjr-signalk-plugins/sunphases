@@ -209,7 +209,6 @@ module.exports = function (app) {
         positionStream = (options.heartbeat == 0)?positionStream.take(1):positionStream.debounceImmediate(options.heartbeat * 1000);
         unsubscribes.push(
           positionStream.onValue(position => {
-            log.N("processing position change for %s", JSON.stringify(position), false);
             var now = new Date();
             var today = dayOfYear(now);
             var delta = new Delta(app, plugin.id);
@@ -222,6 +221,7 @@ module.exports = function (app) {
             options.lastLatitude = 0.0;
             options.lastLongitude = 0.0;
             if ((!options.lastupdateday) || (options.lastupdateday != today)    || (Math.abs(options.lastLatitude - position.latitude) > 1.0) || (Math.abs(options.lastLongitude - position.longitude) > 1.0)) {
+              log.N("processing for position or day change (position = %s)", JSON.stringify(position), false);
               if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
                 Object.keys(options.times).forEach(k => delta.addValue(options.root + k, options.times[k].toISOString()));
                 options.lastupdateday = today;
