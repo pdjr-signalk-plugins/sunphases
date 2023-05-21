@@ -203,6 +203,9 @@ module.exports = function (app) {
       // Get a stream that reports vessel position and sample it at the
       // requested interval.
       //
+      options.lastday = 0;
+      options.lastposition = { "latitude": 0.0, "longitude": 0.0 };
+
       var positionStream = app.streambundle.getSelfStream("navigation.position");
       if (positionStream) { 
         log.N("waiting for position update", false);
@@ -211,25 +214,25 @@ module.exports = function (app) {
           positionStream.onValue(position => {
             var now = new Date();
             var today = dayOfYear(now);
-            var delta = new Delta(app, plugin.id);
 
             /**************************************************************
              * Add sunphase key updates to <deltas> if this is the first
              * time around or if we have entered a new day or if our
              * position has changed significantly.
              */
-            options.lastLatitude = 0.0;
-            options.lastLongitude = 0.0;
-            if ((!options.lastupdateday) || (options.lastupdateday != today)    || (Math.abs(options.lastLatitude - position.latitude) > 1.0) || (Math.abs(options.lastLongitude - position.longitude) > 1.0)) {
-              log.N("processing for position or day change (position = %s)", JSON.stringify(position), false);
+            if ((options.lastday != today) || (Math.abs(options.lastposition.latitude - position.latitude) > 1.0) || (Math.abs(options.lastposition.longitude - position.longitude) > 1.0)) {
+              if (options.lastday != today) {
+                log.N("updating sunphase data for day change from %d to %d", options.lastday, today, false);
+              } else {
+		log.N("updating sunphase data for position change from %s to %s", JSON.stringify(options.lastposition), JSON.stringify(position), false);
+              }
               if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
                 Object.keys(options.times).forEach(k => delta.addValue(options.root + k, options.times[k].toISOString()));
-                options.lastupdateday = today;
-                options.lastLatitude = 0.0;
-                options.lastLongitude = 0.0;
               } else {
                 log.E("unable to compute sun phase data");
               }
+              options.lastday = today;
+              options.lastposition = position;
             }
 
             /**************************************************************
