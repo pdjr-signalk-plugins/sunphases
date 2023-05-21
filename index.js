@@ -224,13 +224,15 @@ module.exports = function (app) {
               if (options.lastday != today) {
                 log.N("updating sunphase data for day change from %d to %d", options.lastday, today, false);
               } else {
-		log.N("updating sunphase data for position change from %s to %s", JSON.stringify(options.lastposition), JSON.stringify(position), false);
+		            log.N("updating sunphase data for position change from %s to %s", JSON.stringify(options.lastposition), JSON.stringify(position), false);
               }
+
               if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
                 Object.keys(options.times).forEach(k => delta.addValue(options.root + k, options.times[k].toISOString()));
               } else {
                 log.E("unable to compute sun phase data");
               }
+              
               options.lastday = today;
               options.lastposition = position;
             }
