@@ -4,8 +4,8 @@ Inject sunlight phase data into Signal K.
 
 ## Background
 
-Quite a few things I want to automate on my ship depend upon having
-some notion of the phases of a day.
+Quite a few things I want to automate on my ship require having some
+notion of the phases of a day.
 For example, there are times when I want to turn on my anchor light
 at dusk and turn it off at dawn; or maybe ring eight-bells at midday.
 Whatever.
