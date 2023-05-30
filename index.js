@@ -228,7 +228,7 @@ module.exports = function (app) {
               }
 
               if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
-                Object.keys(options.times).forEach(k => delta.addValue(options.root + k, options.times[k].toISOString()));
+                Object.keys(options.times).forEach(k => delta.addValue(options.root + k, options.times[k]));
               } else {
                 log.E("unable to compute sun phase data");
               }
