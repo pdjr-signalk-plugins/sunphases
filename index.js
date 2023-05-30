@@ -192,7 +192,7 @@ module.exports = function (app) {
       
     if ((options.root) && (options.heartbeat)) {
 
-      log.N("maintaining keys in '%s' (heartbeat is %ds)", options.root, options.heartbeat);
+      log.N("started: maintaining keys in '%s' (heartbeat is %ds)", options.root, options.heartbeat);
 
       // Publish meta information for all maintained keys
       if (options.metadata) {
