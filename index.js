@@ -176,24 +176,16 @@ module.exports = function (app) {
 
   plugin.start = function(options) {
 
-    // If configuration is empty then initialise with default and
-    // save to disk.
+    // If no configuration supplied, then use our built-in default.
     if (Object.keys(options).length === 0) {
-      options = DEFAULT_OPTIONS;
-      app.savePluginOptions(options, () => { log.N("default configuration saved to disk", false); });
-    } else {
-      if (options.interval) {
-        options.heartbeat = options.interval;
-        delete options.interval;
-        app.savePluginOptions(options, () => { log.N("existing legacy configuration updated", false); });
-      }
+      options = plugin.schema.default;
+      log.N("using default configuration", false);
     }
-      
-    if ((options.root) && (options.heartbeat)) {
 
+    if ((options.root) && (options.heartbeat)) {
       log.N("started: maintaining keys in '%s' (heartbeat is %ds)", options.root, options.heartbeat);
 
-      // Publish meta information for all maintained keys
+      // Publish meta information for all maintained keys.
       if (options.metadata) {
         options.metadata.map(entry => delta.addMeta(options.root + entry.key, { "description": entry.description, "units": entry.units }));
         delta.commit().clear();
@@ -201,7 +193,6 @@ module.exports = function (app) {
       
       // Get a stream that reports vessel position and sample it at the
       // requested interval.
-      //
       options.lastday = 0;
       options.lastposition = { "latitude": 0.0, "longitude": 0.0 };
 
@@ -214,33 +205,29 @@ module.exports = function (app) {
             var now = new Date();
             var today = dayOfYear(now);
 
-            /**************************************************************
-             * Add sunphase key updates to <deltas> if this is the first
-             * time around or if we have entered a new day or if our
-             * position has changed significantly.
-             */
+            // Add sunphase key updates to <deltas> if this is the first
+            // time around or if we have entered a new day or if our
+            // position has changed significantly.
             if ((options.lastday != today) || (Math.abs(options.lastposition.latitude - position.latitude) > 1.0) || (Math.abs(options.lastposition.longitude - position.longitude) > 1.0)) {
               if (options.lastday != today) {
-                log.N("updating sunphase data for day change from %d to %d", options.lastday, today, false);
+                app.debug("updating sunphase data for day change from %d to %d", options.lastday, today);
               } else {
-		            log.N("updating sunphase data for position change from %s to %s", JSON.stringify(options.lastposition), JSON.stringify(position), false);
+		            app.debug("updating sunphase data for position change from %s to %s", JSON.stringify(options.lastposition), JSON.stringify(position));
               }
 
               if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
                 Object.keys(options.times).forEach(k => delta.addValue(options.root + k, options.times[k]));
               } else {
-                log.E("unable to compute sun phase data");
+                log.E("unable to compute sun phase data", false);
               }
               
               options.lastday = today;
               options.lastposition = position;
             }
 
-            /**************************************************************
-             * Check that we actually recovered sun phase data into
-             * <options.times> and if so, add notification key updates to
-             * <deltas>.
-             */
+            // Check that we actually recovered sun phase data into
+            // <options.times> and if so, add notification key updates to
+            // <deltas>.
             if (options.times) {
               options.notifications.forEach(notification => {
                 try {
@@ -282,14 +269,18 @@ module.exports = function (app) {
                 }
               });
             }
+
             // Finally, push our collection of deltas to Signal K.
             delta.commit().clear();
           })
         );
       } else {
-        log.E("stopped: unable to obtain vessel position");
+        log.E("stopped: position stream not found");
       }
+    } else {
+      log.N("stopped: invalid configuration")
     }
+  
   }
 
   plugin.stop = function () {
