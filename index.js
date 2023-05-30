@@ -134,33 +134,32 @@ const PLUGIN_SCHEMA = {
       }
     }
   },
-  "required": [ "root", "heartneat" ]
+  "required": [ "root", "heartbeat" ],
+  "default": {
+    "root": "environment.sunphases.",
+    "heartbeat": 60,
+    "notifications": [
+      { "rangelo": "dawn", "rangehi": "dusk", "inrangenotification": { "key": "daytime" }, "outrangenotification": { "key": "nighttime" } }
+    ],
+    "metadata": [
+      { "key": "dawn", "units": "ISO8601 (UTC)", "description": "Morning nautical twilight ends, morning civil twilight starts" },
+      { "key": "dusk", "units": "ISO8601 (UTC)", "description": "Evening nautical twilight starts" },
+      { "key": "goldenHour", "units": "ISO8601 (UTC)", "description": "Evening golden hour starts" },
+      { "key": "goldenHourEnd", "units": "ISO8601 (UTC)", "description": "Soft light, best time for photography ends" },
+      { "key": "nadir", "units": "ISO8601 (UTC)", "description": "Darkest moment of the night, sun is in the lowest position" },
+      { "key": "nauticalDawn", "units": "ISO8601 (UTC)", "description": "Morning nautical twilight starts" },
+      { "key": "nauticalDusk", "units": "ISO8601 (UTC)", "description": "Evening astronomical twilight starts" },
+      { "key": "night", "units": "ISO8601 (UTC)", "description": "Dark enough for astronomical observations" },
+      { "key": "nightEnd", "units": "ISO8601 (UTC)", "description": "Morning astronomical twilight starts" },
+      { "key": "solarNoon", "units": "ISO8601 (UTC)", "description": "Sun is at its highest elevation" },
+      { "key": "sunrise", "units": "ISO8601 (UTC)", "description": "Top edge of the sun appears on the horizon" },
+      { "key": "sunriseEnd", "units": "ISO8601 (UTC)", "description": "Bottom edge of the sun touches the horizon" },
+      { "key": "sunset", "units": "ISO8601 (UTC)", "description": "Sun disappears below the horizon, evening civil twilight starts" },
+      { "key": "sunsetStart", "units": "ISO8601 (UTC)", "description": "Bottom edge of the sun touches the horizon" }
+    ]
+  }
 };
 const PLUGIN_UISCHEMA = {};
-
-const DEFAULT_OPTIONS = {
-  "root": "environment.sunphases.",
-  "heartbeat": 60,
-  "notifications": [
-    { "rangelo": "dawn", "rangehi": "dusk", "inrangenotification": { "key": "daytime" }, "outrangenotification": { "key": "nighttime" } }
-  ],
-  "metadata": [
-    { "key": "dawn", "units": "ISO8601 (UTC)", "description": "Morning nautical twilight ends, morning civil twilight starts" },
-    { "key": "dusk", "units": "ISO8601 (UTC)", "description": "Evening nautical twilight starts" },
-    { "key": "goldenHour", "units": "ISO8601 (UTC)", "description": "Evening golden hour starts" },
-    { "key": "goldenHourEnd", "units": "ISO8601 (UTC)", "description": "Soft light, best time for photography ends" },
-    { "key": "nadir", "units": "ISO8601 (UTC)", "description": "Darkest moment of the night, sun is in the lowest position" },
-    { "key": "nauticalDawn", "units": "ISO8601 (UTC)", "description": "Morning nautical twilight starts" },
-    { "key": "nauticalDusk", "units": "ISO8601 (UTC)", "description": "Evening astronomical twilight starts" },
-    { "key": "night", "units": "ISO8601 (UTC)", "description": "Dark enough for astronomical observations" },
-    { "key": "nightEnd", "units": "ISO8601 (UTC)", "description": "Morning astronomical twilight starts" },
-    { "key": "solarNoon", "units": "ISO8601 (UTC)", "description": "Sun is at its highest elevation" },
-    { "key": "sunrise", "units": "ISO8601 (UTC)", "description": "Top edge of the sun appears on the horizon" },
-    { "key": "sunriseEnd", "units": "ISO8601 (UTC)", "description": "Bottom edge of the sun touches the horizon" },
-    { "key": "sunset", "units": "ISO8601 (UTC)", "description": "Sun disappears below the horizon, evening civil twilight starts" },
-    { "key": "sunsetStart", "units": "ISO8601 (UTC)", "description": "Bottom edge of the sun touches the horizon" }
-  ]
-};
 
 module.exports = function (app) {
   var plugin = {};
