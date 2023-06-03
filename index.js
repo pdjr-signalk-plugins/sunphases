@@ -179,7 +179,7 @@ module.exports = function (app) {
     // If no configuration supplied, then use our built-in default.
     if (Object.keys(options).length === 0) {
       options = plugin.schema.default;
-      log.N("using default configuration", false);
+      log.W("using default configuration");
     }
 
     if ((options.root) && (options.heartbeat)) {
