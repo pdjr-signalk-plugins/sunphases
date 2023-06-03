@@ -35,8 +35,9 @@ requirements.
 
 ## Configuration
 
-The first time the plugin executes after installation it will use the
-following default configuration:
+The plugin includes the following embedded default configuration which
+replicates as far as possible the default Signal K behaviour.
+
 ```
 {
   "root": "environment.sunphases.",
@@ -77,9 +78,9 @@ The plugin understands the follwing configuration properties.
 | notifications | []                       | Array of notification rules (see below). |
 | metadata      | See below.               | Array of meta-data properties for sunphase keys. |
 
-The *root* property value determines both the root under which sunphase
-keys will be stored and also the root under which any generated
-notifications will be placed (this will always be 'notifications.*root*').
+The *root* property value specifies the root under which sunphase keys
+will be stored and also the root under which generated notifications
+will be placed (i.e. 'notifications.*root*').
 
 The *heartbeat* property defines how frequently the plugin should
 refresh its data.
@@ -128,8 +129,13 @@ It is unlikely that you will want or need to change the default values.
 
 ## Operation
 
-The plugin will update key values and process notification rules once
-every *heartbeat* seconds.
+The plugin starts automatically once installed, but will not operate
+until it received a value on 'navigation.position'.
+If uour system doesn't have a position source, then you can use a
+simulator to supply one.
+
+Once operating the plugin will update key values and process
+notification rules once every *heartbeat* seconds.
 
 ## Author
 
