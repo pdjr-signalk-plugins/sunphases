@@ -130,8 +130,8 @@ It is unlikely that you will want or need to change the default values.
 ## Operation
 
 The plugin starts automatically once installed, but will not operate
-until it received a value on 'navigation.position'.
-If uour system doesn't have a position source, then you can use a
+until it receives a value on 'navigation.position'.
+If your system doesn't have a position source, then you can use a
 simulator to supply one.
 
 Once operating the plugin will update key values and process
