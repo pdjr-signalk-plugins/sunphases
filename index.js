@@ -24,6 +24,11 @@ const PLUGIN_DESCRIPTION = 'Inject sunlight phase paths into Signal K';
 const PLUGIN_SCHEMA = {
   "type": "object",
   "properties": {
+    "positionkey": {
+       "type": "string",
+       "title": "Path reporting vessel position",
+       "default": "navigation.position"
+    },
     "root": {
       "type": "string",
       "title": "Path under which to store sun phase keys",
@@ -102,7 +107,15 @@ const PLUGIN_SCHEMA = {
           }
         },
         "required": [ "rangelo", "rangehi" ]
-      }
+      },
+      "default": [
+        {
+          "rangelo": "dawn",
+          "rangehi": "dusk",
+          "inrangenotification": { "key": "daytime" },
+          "outrangenotification": { "key": "nighttime" }
+        }
+      ],
     },
     "metadata": {
       "description": "Meta data for each key",
@@ -131,33 +144,26 @@ const PLUGIN_SCHEMA = {
             "type": "string"
           }
         }
-      }
+      },
+      "default": [
+        { "key": "dawn", "units": "ISO8601 (UTC)", "description": "Morning nautical twilight ends, morning civil twilight starts" },
+        { "key": "dusk", "units": "ISO8601 (UTC)", "description": "Evening nautical twilight starts" },
+        { "key": "goldenHour", "units": "ISO8601 (UTC)", "description": "Evening golden hour starts" },
+        { "key": "goldenHourEnd", "units": "ISO8601 (UTC)", "description": "Soft light, best time for photography ends" },
+        { "key": "nadir", "units": "ISO8601 (UTC)", "description": "Darkest moment of the night, sun is in the lowest position" },
+        { "key": "nauticalDawn", "units": "ISO8601 (UTC)", "description": "Morning nautical twilight starts" },
+        { "key": "nauticalDusk", "units": "ISO8601 (UTC)", "description": "Evening astronomical twilight starts" },
+        { "key": "night", "units": "ISO8601 (UTC)", "description": "Dark enough for astronomical observations" },
+        { "key": "nightEnd", "units": "ISO8601 (UTC)", "description": "Morning astronomical twilight starts" },
+        { "key": "solarNoon", "units": "ISO8601 (UTC)", "description": "Sun is at its highest elevation" },
+        { "key": "sunrise", "units": "ISO8601 (UTC)", "description": "Top edge of the sun appears on the horizon" },
+        { "key": "sunriseEnd", "units": "ISO8601 (UTC)", "description": "Bottom edge of the sun touches the horizon" },
+        { "key": "sunset", "units": "ISO8601 (UTC)", "description": "Sun disappears below the horizon, evening civil twilight starts" },
+        { "key": "sunsetStart", "units": "ISO8601 (UTC)", "description": "Bottom edge of the sun touches the horizon" }
+      ]
     }
   },
-  "required": [ "root", "heartbeat" ],
-  "default": {
-    "root": "environment.sunphases.",
-    "heartbeat": 60,
-    "notifications": [
-      { "rangelo": "dawn", "rangehi": "dusk", "inrangenotification": { "key": "daytime" }, "outrangenotification": { "key": "nighttime" } }
-    ],
-    "metadata": [
-      { "key": "dawn", "units": "ISO8601 (UTC)", "description": "Morning nautical twilight ends, morning civil twilight starts" },
-      { "key": "dusk", "units": "ISO8601 (UTC)", "description": "Evening nautical twilight starts" },
-      { "key": "goldenHour", "units": "ISO8601 (UTC)", "description": "Evening golden hour starts" },
-      { "key": "goldenHourEnd", "units": "ISO8601 (UTC)", "description": "Soft light, best time for photography ends" },
-      { "key": "nadir", "units": "ISO8601 (UTC)", "description": "Darkest moment of the night, sun is in the lowest position" },
-      { "key": "nauticalDawn", "units": "ISO8601 (UTC)", "description": "Morning nautical twilight starts" },
-      { "key": "nauticalDusk", "units": "ISO8601 (UTC)", "description": "Evening astronomical twilight starts" },
-      { "key": "night", "units": "ISO8601 (UTC)", "description": "Dark enough for astronomical observations" },
-      { "key": "nightEnd", "units": "ISO8601 (UTC)", "description": "Morning astronomical twilight starts" },
-      { "key": "solarNoon", "units": "ISO8601 (UTC)", "description": "Sun is at its highest elevation" },
-      { "key": "sunrise", "units": "ISO8601 (UTC)", "description": "Top edge of the sun appears on the horizon" },
-      { "key": "sunriseEnd", "units": "ISO8601 (UTC)", "description": "Bottom edge of the sun touches the horizon" },
-      { "key": "sunset", "units": "ISO8601 (UTC)", "description": "Sun disappears below the horizon, evening civil twilight starts" },
-      { "key": "sunsetStart", "units": "ISO8601 (UTC)", "description": "Bottom edge of the sun touches the horizon" }
-    ]
-  }
+  "required": [ "notifications" ]
 };
 const PLUGIN_UISCHEMA = {};
 
@@ -176,111 +182,105 @@ module.exports = function (app) {
 
   plugin.start = function(options) {
 
-    // If no configuration supplied, then use our built-in default.
-    if (Object.keys(options).length === 0) {
-      options = plugin.schema.default;
-      log.W("using default configuration");
+    // If missing or partial configuration, then use our built-in default.
+    options.positionkey = (options.positionkey || plugin.schema.properties.positionkey.default);
+    options.root = (options.root || plugin.schema.properties.root.default);
+    options.heartbeat = (options.heartbeat || plugin.schema.properties.heartbeat.default);
+    options.metadata = (options.metadata || plugin.schema.properties.metadata.default);
+    options.notifications = (options.notifications || plugin.schema.properties.notifications.default);
+
+    log.N("maintaining keys in '%s' (heartbeat is %ds)", options.root, options.heartbeat);
+
+    // Publish meta information for all maintained keys.
+    if (options.metadata) {
+      options.metadata.map(entry => delta.addMeta(options.root + entry.key, { "description": entry.description, "units": entry.units }));
+      delta.commit().clear();
     }
-
-    if ((options.root) && (options.heartbeat)) {
-      log.N("started: maintaining keys in '%s' (heartbeat is %ds)", options.root, options.heartbeat);
-
-      // Publish meta information for all maintained keys.
-      if (options.metadata) {
-        options.metadata.map(entry => delta.addMeta(options.root + entry.key, { "description": entry.description, "units": entry.units }));
-        delta.commit().clear();
-      }
       
-      // Get a stream that reports vessel position and sample it at the
-      // requested interval.
-      options.lastday = 0;
-      options.lastposition = { "latitude": 0.0, "longitude": 0.0 };
+    // Get a stream that reports vessel position and sample it at the
+    // requested interval.
+    options.lastday = 0;
+    options.lastposition = { "latitude": 0.0, "longitude": 0.0 };
 
-      var positionStream = app.streambundle.getSelfStream("navigation.position");
-      if (positionStream) { 
-        log.N("waiting for position update", false);
-        positionStream = (options.heartbeat == 0)?positionStream.take(1):positionStream.debounceImmediate(options.heartbeat * 1000);
-        unsubscribes.push(
-          positionStream.onValue(position => {
-            var now = new Date();
-            var today = dayOfYear(now);
+    var positionStream = app.streambundle.getSelfStream(options.positionkey);
+    if (positionStream) { 
+      log.N("waiting for position update", false);
+      positionStream = (options.heartbeat == 0)?positionStream.take(1):positionStream.debounceImmediate(options.heartbeat * 1000);
+      unsubscribes.push(positionStream.onValue(position => {
+        var now = new Date();
+        var today = dayOfYear(now);
 
-            // Add sunphase key updates to <deltas> if this is the first
-            // time around or if we have entered a new day or if our
-            // position has changed significantly.
-            if ((options.lastday != today) || (Math.abs(options.lastposition.latitude - position.latitude) > 1.0) || (Math.abs(options.lastposition.longitude - position.longitude) > 1.0)) {
-              if (options.lastday != today) {
-                app.debug("updating sunphase data for day change from %d to %d", options.lastday, today);
-              } else {
-		            app.debug("updating sunphase data for position change from %s to %s", JSON.stringify(options.lastposition), JSON.stringify(position));
-              }
+        // Add sunphase key updates to <deltas> if this is the first
+        // time around or if we have entered a new day or if our
+        // position has changed significantly.
+        if ((options.lastday != today) || (Math.abs(options.lastposition.latitude - position.latitude) > 1.0) || (Math.abs(options.lastposition.longitude - position.longitude) > 1.0)) {
+          if (options.lastday != today) {
+            app.debug("updating sunphase data for day change from %d to %d", options.lastday, today);
+          } else {
+		        app.debug("updating sunphase data for position change from %s to %s", JSON.stringify(options.lastposition), JSON.stringify(position));
+          }
 
-              if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
-                Object.keys(options.times).forEach(k => delta.addValue(options.root + k, options.times[k]));
-              } else {
-                log.E("unable to compute sun phase data", false);
-              }
+          if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
+            Object.keys(options.times).forEach(k => delta.addValue(options.root + k, options.times[k]));
+          } else {
+            log.E("unable to compute sun phase data", false);
+          }
               
-              options.lastday = today;
-              options.lastposition = position;
-            }
+          options.lastday = today;
+          options.lastposition = position;
+        }
 
-            // Check that we actually recovered sun phase data into
-            // <options.times> and if so, add notification key updates to
-            // <deltas>.
-            if (options.times) {
-              options.notifications.forEach(notification => {
-                try {
-                  // Build in-range and out-range notification paths.
-                  var nirpath = "notifications." + options.root + notification.inrangenotification.key;
-                  var norpath = "notifications." + options.root + notification.outrangenotification.key;
-                  // Get the times of interest as seconds in this day.
-                  now = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
-                  var start = parseTimeString(notification.rangelo, options.times);
-                  var end = parseTimeString(notification.rangehi, options.times);
-                  // Is this an "in-range" or "out-of-range" update?
-                  if ((now > start) && (now < end)) {
-                    // It's "in-range". Is there an "in-range" notification path?
-                    // If so and we haven't made this update already...
-                    if (notification.inrangenotification.key && (!notification.actioned || (notification.actioned != 1))) {
-                      // Add a create in-range notification delta to deltas.
-                      delta.addValue(nirpath, {
-                        message: "Between " + notification.rangelo + " and " + notification.rangehi,
-                        state: notification.inrangenotification.state || "normal",
-                        method: notification.inrangenotification.method || []
-                      });
-                      // And add a delete out-of-range notification delta to deltas.
-                      delta.addValue(norpath, null);
-                      notification.actioned = 1;
-                    }
-                  } else {
-                    if (notification.outrangenotification.key && (!notification.actioned || (notification.action    != -1))) {
-                      delta.addValue(norpath, {
-                        message: "Outside " + notification.rangelo + " and " + notification.rangehi,
-                        state: notification.outrangenotification.state || "normal",
-                        method: notification.outrangenotification.method || []
-                      });
-                      delta.addValue(nirpath, null);
-                      notification.actioned = -1;
-                    }
-                  }                            
-                } catch(e) {
-                  log.E(e);
+        // Check that we actually recovered sun phase data into
+        // <options.times> and if so, add notification key updates to
+        // <deltas>.
+        if (options.times) {
+          options.notifications.forEach(notification => {
+            try {
+              // Build in-range and out-range notification paths.
+              var nirpath = "notifications." + options.root + notification.inrangenotification.key;
+              var norpath = "notifications." + options.root + notification.outrangenotification.key;
+              // Get the times of interest as seconds in this day.
+              now = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
+              var start = parseTimeString(notification.rangelo, options.times);
+              var end = parseTimeString(notification.rangehi, options.times);
+              // Is this an "in-range" or "out-of-range" update?
+              if ((now > start) && (now < end)) {
+                // It's "in-range". Is there an "in-range" notification path?
+                // If so and we haven't made this update already...
+                if (notification.inrangenotification.key && (!notification.actioned || (notification.actioned != 1))) {
+                  // Add a create in-range notification delta to deltas.
+                  delta.addValue(nirpath, {
+                    message: "Between " + notification.rangelo + " and " + notification.rangehi,
+                    state: notification.inrangenotification.state || "normal",
+                    method: notification.inrangenotification.method || []
+                  });
+                  // And add a delete out-of-range notification delta to deltas.
+                  delta.addValue(norpath, null);
+                  notification.actioned = 1;
                 }
-              });
+              } else {
+                if (notification.outrangenotification.key && (!notification.actioned || (notification.action    != -1))) {
+                  delta.addValue(norpath, {
+                    message: "Outside " + notification.rangelo + " and " + notification.rangehi,
+                    state: notification.outrangenotification.state || "normal",
+                    method: notification.outrangenotification.method || []
+                  });
+                  delta.addValue(nirpath, null);
+                  notification.actioned = -1;
+                }
+              }                            
+            } catch(e) {
+              log.E(e);
             }
+          });
+        }
 
-            // Finally, push our collection of deltas to Signal K.
-            delta.commit().clear();
-          })
-        );
-      } else {
-        log.E("stopped: position stream not found");
-      }
+        // Finally, push our collection of deltas to Signal K.
+        delta.commit().clear();
+      }));
     } else {
-      log.N("stopped: invalid configuration")
+      log.E("cannot obtain vessel position from '%s'", options.positionkey);
     }
-  
   }
 
   plugin.stop = function () {

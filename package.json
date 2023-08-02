@@ -1,6 +1,6 @@
 {
   "name": "pdjr-skplugin-sunphases",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Inject sun phase paths into Signal K",
   "main": "index.js",
   "signalk-plugin-enabled-by-default": true,

@@ -25,18 +25,68 @@ The notification generator uses a collection of user-defined rules to
 test local time against sunphase data and raise notifications based on
 the result.
 
-A vanilla installation of __pdjr-skplugin-sunphases__ includes a rule
-which raise the notification
+A vanilla installation of __pdjr-skplugin-sunphases__ includes a
+specimen rule which raises the notification
 'notifications.environment.sunphase.daytime' between dawn and dusk and
 'notifications.environment.sunphases.nighttime' between dusk and dawn.
 
-The user can configure the notification rule set to suit their own
-requirements.  
-
 ## Configuration
 
-The plugin includes the following embedded default configuration which
-replicates as far as possible the default Signal K behaviour.
+The plugin configuration has the following properties.
+
+| Property name | Value type | Value default            | Description |
+| :------------ | :--------- | :----------------------- | :---------- |
+| positionkey   | String     | 'navigation.position'    | Signal K key which provides vessel position data. |  
+| root          | String     | 'environment.sunphases.' | Signal K path under which to store sun phase keys. |
+| heartbeat     | Number     | 60                       | Time in seconds between data updates/rule processing. |
+| notifications | Array      | (see below)              | Array of *notification* objects. |
+| metadata      | Array      | (see below)              | Array of *metadata* objects describing each sunphase key. |
+
+The *root* property value specifies the root under which sunphase keys
+will be stored and also the root under which generated notifications
+will be placed (i.e. 'notifications.*root*').
+
+The *heartbeat* property defines how frequently the plugin should
+refresh its data.
+At each *heartbeat* the plugin will:
+
+1. Refresh the keys under *root* if the vessel position has changed by
+   more than one degree of latitude or longitude or if Zulu time has
+   rolled over into a new day.
+
+2. Process notification rules.
+
+Each *notification* object has the following properties.
+
+| Property name        | Value type | Value default | Description |
+| :------------------- | :--------- | :------------ | :---------- |
+| rangelo              | Number     | (none)        | String specifying the in-range start time. |
+| rangehi              | Number     | (none)        | String specifying the in-range end time. |
+| inrangenotification  | Object     | {}            | Object specifying the notification to be raised when the current time of day is between *rangelo* and *rangehi*. |
+| outrangenotification | Object     | {}            | Object specifying the notification to be raised when the current time of day is outwith *rangelo* and *rangehi*. |
+
+*rangelo* and *rangehi* can be specified as SunCalc key names
+(optionally with some arithmetic tweaking) or as absolute Zulu times.
+The required format is:
+
+( *key*[(__+__|__-__)*n*(__h__|__m__|__s__)] | *hh*__:__*mm*__:__*ss* )
+
+where *key* is the name of a SunCalc key (and may be all you need).
+
+*inrangenotification* and *outrangenotification* objects have the
+following properties.
+
+| Property name        | Value type | Value default | Description |
+| :------------------- | :--------- | :------------ | :---------- |
+| key                  | String     | (none)        | The name under which the notification will be placed (the full key name will be 'notifications.*root*.*key*'). |
+| state                | String     | 'normal'      | Value to be used for the notification state property. |
+| method               | Array      | []            | String array suggesting the methods that might be used to anounce the notification. |
+
+The *metadata* property is an array of data supplying metadata values
+for each of the generated sunphase keys.
+It is unlikely that you will want or need to change the default values.
+
+The plugin includes the following embedded default configuration.
 
 ```
 {
@@ -69,64 +119,6 @@ replicates as far as possible the default Signal K behaviour.
 }
 ```
 
-The plugin understands the follwing configuration properties.
-
-| Property      | Default                  | Decription |
-| :------------ | :----------------------- | :--------- |
-| root          | 'environment.sunphases.' | The path under which to store sun phase keys. |
-| heartbeat     | 60                       | Time in seconds between evaluation of data updates and rule processing. |
-| notifications | []                       | Array of notification rules (see below). |
-| metadata      | See below.               | Array of meta-data properties for sunphase keys. |
-
-The *root* property value specifies the root under which sunphase keys
-will be stored and also the root under which generated notifications
-will be placed (i.e. 'notifications.*root*').
-
-The *heartbeat* property defines how frequently the plugin should
-refresh its data.
-At each *heartbeat* the plugin will:
-
-1. Refresh the keys under *root* if the vessel position has changed by
-   more than one degree of latitude or longitude or if Zulu time has
-   rolled over into a new day.
-
-2. Process all defined notification rules.
-
-The *notifications* property is an array of of one or more
-*notification* rules each of which identifies a time window and the
-notifications that should be raised when the current time of day is
-within and outwith this range.
-
-Each notification rule can include the following properties.
-
-| Property             | Default | Description |
-| :------------------- | :------ | :---------- |
-| rangelo              | (none)  | Required string specifying the in-range start time. |
-| rangehi              | (none)  | Required string specifying the in-range end time. |
-| inrangenotification  | (none)  | Optional object specifying the notification to be raised when the current time of day is between *rangelo* and *rangehi*. |
-| outrangenotification | (none)  | Optional object specifying the notification to be raised when the current time of day is outwith *rangelo* and *rangehi*. |
-
-*rangelo* and *rangehi* can be specified as SunCalc key names
-(optionally with some arithmetic tweaking) or as absolute Zulu times.
-The required format is:
-
-( *key*[(__+__|__-__)*n*(__h__|__m__|__s__)] | *hh*__:__*mm*__:__*ss* )
-
-where *key* is the name of a SunCalc key (and may be all you need).
-
-*inrangenotification* and *outrangenotification* are objects with three
-properties which define a notification.
-
-| Property | Default  | Description |
-| :------- | :------- | :---------- |
-| key      | (none)   | Required string specifying the name under which the notification will be placed (the full key name will be 'notifications.*root*.*key*'). |
-| state    | "normal" | Optional string property specifying the value of the notification state field. |
-| method   | []       | Optional string array suggesting the methods that might be used to anounce the notification. |
-
-The *metadata* property is an array of data supplying the meta-data
-entries for each of the generated sunphase keys.
-It is unlikely that you will want or need to change the default values.
-
 ## Operation
 
 The plugin starts automatically once installed, but will not operate
@@ -139,4 +131,4 @@ notification rules once every *heartbeat* seconds.
 
 ## Author
 
-Paul Reeve <preeve_at_pdjr_dot_eu>
+Paul Reeve <*preeve_at_pdjr_dot_eu*>
