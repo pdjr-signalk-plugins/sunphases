@@ -15,8 +15,9 @@
  */
 
 const suncalc = require('suncalc');
-const Log = require("./lib/signalk-liblog/Log.js");
-const Delta = require("./lib/signalk-libdelta/Delta.js");
+const MyApp = require('./lib/signalk-libapp/App.js');
+const Log = require('./lib/signalk-liblog/Log.js');
+const Delta = require('./lib/signalk-libdelta/Delta.js');
 
 const PLUGIN_ID = 'sunphases';
 const PLUGIN_NAME = 'pdjr-signalk-sunphases';
@@ -177,95 +178,98 @@ module.exports = function (app) {
   plugin.schema = PLUGIN_SCHEMA;
   plugin.uischema = PLUGIN_UISCHEMA;
 
+  const App = new MyApp(app);
   const log = new Log(plugin.id, { ncallback: app.setPluginStatus, ecallback: app.setPluginError });
   const delta = new Delta(app, plugin.id);
 
   plugin.start = function(options) {
 
-    // If missing or partial configuration, then use our built-in default.
-    options.positionkey = (options.positionkey || plugin.schema.properties.positionkey.default);
-    options.root = (options.root || plugin.schema.properties.root.default);
-    options.heartbeat = (options.heartbeat || plugin.schema.properties.heartbeat.default);
-    options.metadata = (options.metadata || plugin.schema.properties.metadata.default);
-    options.notifications = (options.notifications || plugin.schema.properties.notifications.default);
+    // Make options with global scope as plugin.options.
+    plugin.options = {}
+    plugin.options.positionkey = (options.positionkey || plugin.schema.properties.positionkey.default);
+    plugin.options.root = (options.root || plugin.schema.properties.root.default);
+    plugin.options.heartbeat = (options.heartbeat || plugin.schema.properties.heartbeat.default);
+    plugin.options.notifications = (options.notifications || plugin.schema.properties.notifications.default);
+    plugin.options.metadata = (options.metadata || plugin.schema.properties.metadata.default);
 
-    log.N("maintaining keys in '%s' (heartbeat is %ds)", options.root, options.heartbeat);
+    log.N("waiting for position update", false);
 
     // Publish meta information for all maintained keys.
-    if (options.metadata) {
-      options.metadata.map(entry => delta.addMeta(options.root + entry.key, { "description": entry.description, "units": entry.units }));
+    if (plugin.options.metadata) {
+      plugin.options.metadata.map(entry => delta.addMeta(plugin.options.root + entry.key, { "description": entry.description, "units": entry.units }));
       delta.commit().clear();
     }
       
     // Get a stream that reports vessel position and sample it at the
     // requested interval.
-    options.lastday = 0;
-    options.lastposition = { "latitude": 0.0, "longitude": 0.0 };
+    plugin.options.lastday = 0;
+    plugin.options.lastposition = { latitude: 0.0, longitude: 0.0 };
 
-    var positionStream = app.streambundle.getSelfStream(options.positionkey);
+    var positionStream = app.streambundle.getSelfStream(plugin.options.positionkey);
     if (positionStream) { 
-      log.N("waiting for position update", false);
-      positionStream = (options.heartbeat == 0)?positionStream.take(1):positionStream.debounceImmediate(options.heartbeat * 1000);
+      positionStream = (plugin.options.heartbeat == 0)?positionStream.take(1):positionStream.debounceImmediate(plugin.options.heartbeat * 1000);
       unsubscribes.push(positionStream.onValue(position => {
+        log.N(`maintaining keys in '${plugin.options.root}' (heartbeat is ${plugin.options.heartbeat}s)`);
         var now = new Date();
         var today = dayOfYear(now);
 
         // Add sunphase key updates to <deltas> if this is the first
         // time around or if we have entered a new day or if our
         // position has changed significantly.
-        if ((options.lastday != today) || (Math.abs(options.lastposition.latitude - position.latitude) > 1.0) || (Math.abs(options.lastposition.longitude - position.longitude) > 1.0)) {
-          if (options.lastday != today) {
-            app.debug("updating sunphase data for day change from %d to %d", options.lastday, today);
+        if ((plugin.options.lastday != today) || (Math.abs(plugin.options.lastposition.latitude - position.latitude) > 1.0) || (Math.abs(plugin.options.lastposition.longitude - position.longitude) > 1.0)) {
+          if (plugin.options.lastday != today) {
+            app.debug(`updating sunphase data for day change from ${plugin.options.lastday} to ${today}`);
           } else {
-		        app.debug("updating sunphase data for position change from %s to %s", JSON.stringify(options.lastposition), JSON.stringify(position));
+		        app.debug(`updating sunphase data for position change from ${JSON.stringify(plugin.options.lastposition)} to ${JSON.stringify(position)}`);
           }
 
-          if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
-            Object.keys(options.times).forEach(k => delta.addValue(options.root + k, options.times[k]));
+          if (plugin.options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
+            Object.keys(plugin.options.times).forEach(k => delta.addValue(plugin.options.root + k, plugin.options.times[k]));
           } else {
             log.E("unable to compute sun phase data", false);
           }
+          delta.commit().clear();
               
-          options.lastday = today;
-          options.lastposition = position;
+          plugin.options.lastday = today;
+          plugin.options.lastposition = position;
         }
 
         // Check that we actually recovered sun phase data into
         // <options.times> and if so, add notification key updates to
         // <deltas>.
-        if (options.times) {
-          options.notifications.forEach(notification => {
+        if (plugin.options.times) {
+          plugin.options.notifications.forEach(notification => {
             try {
               // Build in-range and out-range notification paths.
-              var nirpath = "notifications." + options.root + notification.inrangenotification.key;
-              var norpath = "notifications." + options.root + notification.outrangenotification.key;
+              var nirpath = "notifications." + plugin.options.root + notification.inrangenotification.key;
+              var norpath = "notifications." + plugin.options.root + notification.outrangenotification.key;
               // Get the times of interest as seconds in this day.
               now = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
-              var start = parseTimeString(notification.rangelo, options.times);
-              var end = parseTimeString(notification.rangehi, options.times);
+              var start = parseTimeString(notification.rangelo, plugin.options.times);
+              var end = parseTimeString(notification.rangehi, plugin.options.times);
               // Is this an "in-range" or "out-of-range" update?
               if ((now > start) && (now < end)) {
                 // It's "in-range". Is there an "in-range" notification path?
                 // If so and we haven't made this update already...
                 if (notification.inrangenotification.key && (!notification.actioned || (notification.actioned != 1))) {
                   // Add a create in-range notification delta to deltas.
-                  delta.addValue(nirpath, {
-                    message: "Between " + notification.rangelo + " and " + notification.rangehi,
+                  App.notify(nirpath, {
                     state: notification.inrangenotification.state || "normal",
-                    method: notification.inrangenotification.method || []
-                  });
+                    method: notification.inrangenotification.method || [],
+                    message: `Between ${notification.rangelo} and ${notification.rangehi}.`
+                  }, plugin.id);
                   // And add a delete out-of-range notification delta to deltas.
-                  delta.addValue(norpath, null);
+                  App.notify(norpath, null, plugin.id);
                   notification.actioned = 1;
                 }
               } else {
                 if (notification.outrangenotification.key && (!notification.actioned || (notification.action    != -1))) {
-                  delta.addValue(norpath, {
-                    message: "Outside " + notification.rangelo + " and " + notification.rangehi,
+                  App.notify(norpath, {
                     state: notification.outrangenotification.state || "normal",
-                    method: notification.outrangenotification.method || []
-                  });
-                  delta.addValue(nirpath, null);
+                    method: notification.outrangenotification.method || [],
+                    message: `Outside ${notification.rangelo} and ${notification.rangehi}.`
+                  }, plugin.id);
+                  App.notify(nirpath, null,plugin.id);
                   notification.actioned = -1;
                 }
               }                            
@@ -274,12 +278,9 @@ module.exports = function (app) {
             }
           });
         }
-
-        // Finally, push our collection of deltas to Signal K.
-        delta.commit().clear();
       }));
     } else {
-      log.E("cannot obtain vessel position from '%s'", options.positionkey);
+      log.E(`cannot obtain vessel position from '${plugin.options.positionkey}'`);
     }
   }
 
@@ -305,7 +306,7 @@ module.exports = function (app) {
         date = sunphases[matches[1]];
         retval = (3600 * date.getHours()) + (60 * date.getMinutes()) + (1 * date.getSeconds());
       } else {
-        throw "invalid sun phase key '" + matches[1] + "'";
+        throw `invalid sun phase key '${matches[1]}'`;
       }
     } else if (matches = s.match(/^(\w+)(\+|\-)(\d+)(h|m|s)$/)) {
       if (sunphases.hasOwnProperty(matches[1])) {
@@ -320,10 +321,10 @@ module.exports = function (app) {
             break;
         }
       } else {
-        throw "invalid sun phase key '" + matches[1] + "'";
+        throw `invalid sun phase key '${matches[1]}'`;
       }
     } else {
-      throw "error parsing '" + s + "'";
+      throw `error parsing '${s}'`;
     }
     return(retval);
   }
