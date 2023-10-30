@@ -192,7 +192,7 @@ module.exports = function (app) {
     plugin.options.notifications = (options.notifications || plugin.schema.properties.notifications.default);
     plugin.options.metadata = (options.metadata || plugin.schema.properties.metadata.default);
 
-    log.N("waiting for position update", false);
+    log.N(`maintaining keys in '${plugin.options.root}' (heartbeat is ${plugin.options.heartbeat}s)`);
 
     // Publish meta information for all maintained keys.
     if (plugin.options.metadata) {
@@ -209,7 +209,6 @@ module.exports = function (app) {
     if (positionStream) { 
       positionStream = (plugin.options.heartbeat == 0)?positionStream.take(1):positionStream.debounceImmediate(plugin.options.heartbeat * 1000);
       unsubscribes.push(positionStream.onValue(position => {
-        log.N(`maintaining keys in '${plugin.options.root}' (heartbeat is ${plugin.options.heartbeat}s)`);
         var now = new Date();
         var today = dayOfYear(now);
 
