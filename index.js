@@ -192,7 +192,7 @@ module.exports = function (app) {
     plugin.options.notifications = (options.notifications || plugin.schema.properties.notifications.default);
     plugin.options.metadata = (options.metadata || plugin.schema.properties.metadata.default);
 
-    log.N(`maintaining keys in '${plugin.options.root}' (heartbeat is ${plugin.options.heartbeat}s)`);
+    log.N("waiting for position update", false);
 
     // Publish meta information for all maintained keys.
     if (plugin.options.metadata) {
@@ -207,9 +207,9 @@ module.exports = function (app) {
 
     var positionStream = app.streambundle.getSelfStream(plugin.options.positionkey);
     if (positionStream) { 
-      log.N("waiting for position update", false);
       positionStream = (plugin.options.heartbeat == 0)?positionStream.take(1):positionStream.debounceImmediate(plugin.options.heartbeat * 1000);
       unsubscribes.push(positionStream.onValue(position => {
+        log.N(`maintaining keys in '${plugin.options.root}' (heartbeat is ${plugin.options.heartbeat}s)`);
         var now = new Date();
         var today = dayOfYear(now);
 
@@ -228,6 +228,7 @@ module.exports = function (app) {
           } else {
             log.E("unable to compute sun phase data", false);
           }
+          delta.commit().clear();
               
           plugin.options.lastday = today;
           plugin.options.lastposition = position;
