@@ -15,9 +15,9 @@
  */
 
 const suncalc = require('suncalc');
-const MyApp = require('./lib/signalk-libapp/App.js');
-const Log = require('./lib/signalk-liblog/Log.js');
-const Delta = require('./lib/signalk-libdelta/Delta.js');
+const MyApp = require('signalk-libapp/App.js');
+const Log = require('signalk-liblog/Log.js');
+const Delta = require('signalk-libdelta/Delta.js');
 
 const PLUGIN_ID = 'sunphases';
 const PLUGIN_NAME = 'pdjr-signalk-sunphases';
