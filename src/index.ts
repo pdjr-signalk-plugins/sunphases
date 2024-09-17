@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 
-const suncalc = require('suncalc')
+import { getTimes, GetTimesResult } from 'suncalc'
 import { Delta } from 'signalk-libdelta'
 
 const PLUGIN_ID: string = 'sunphases'
@@ -177,7 +177,7 @@ module.exports = function (app: any) {
     notifications: [],
     positionkey: '',
     root: '',
-    times: null
+    times: undefined
   }
 
   const plugin: SKPlugin = {
@@ -228,8 +228,8 @@ module.exports = function (app: any) {
 		        app.debug(`updating sunphase data for position change from ${JSON.stringify(options.lastposition)} to ${JSON.stringify(position)}`);
           }
 
-          if (options.times = suncalc.getTimes(now, position.latitude, position.longitude)) {
-            Object.keys(options.times).forEach(k => delta.addValue(options.root + k, options.times[k]));
+          if ((options.times = getTimes(now, position.latitude, position.longitude)) && (options.times !== undefined)) {
+            Object.entries(options.times).forEach(([ k, v ]) => delta.addValue(options.root + k, v ));
           } else {
             app.setPluginError("unable to compute sun phase data", false);
           }
@@ -359,6 +359,6 @@ interface SKOptions {
   notifications: any[],
   positionkey: string,
   root: string,
-  times: any
+  times: GetTimesResult | undefined
 }
 
