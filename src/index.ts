@@ -14,10 +14,8 @@
  * permissions and limitations under the License.
  */
 
-const suncalc = require('suncalc');
-const MyApp = require('signalk-libapp/App.js');
-const Log = require('signalk-liblog/Log.js');
-const Delta = require('signalk-libdelta/Delta.js');
+const suncalc = require('suncalc')
+import { Delta } from 'signalk-libdelta'
 
 const PLUGIN_ID: string = 'sunphases'
 const PLUGIN_NAME: string = 'pdjr-signalk-sunphases'
