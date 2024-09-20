@@ -258,24 +258,24 @@ module.exports = function (app: any) {
                 // If so and we haven't made this update already...
                 if (notification.inrangenotification.key && (!notification.actioned || (notification.actioned != 1))) {
                   // Add a create in-range notification delta to deltas.
-                  app.notify(nirpath, {
+                  delta.addValue(nirpath, {
                     state: notification.inrangenotification.state || "normal",
                     method: notification.inrangenotification.method || [],
                     message: `Between ${notification.rangelo} and ${notification.rangehi}.`
-                  }, plugin.id);
+                  }).commit().clear
                   // And add a delete out-of-range notification delta to deltas.
-                  app.notify(norpath, null, plugin.id);
-                  notification.actioned = 1;
+                  delta.addValue(norpath, null).commit().clear()
+                  notification.actioned = 1
                 }
               } else {
                 if (notification.outrangenotification.key && (!notification.actioned || (notification.action    != -1))) {
-                  app.notify(norpath, {
+                  delta.addValue(norpath, {
                     state: notification.outrangenotification.state || "normal",
                     method: notification.outrangenotification.method || [],
                     message: `Outside ${notification.rangelo} and ${notification.rangehi}.`
-                  }, plugin.id);
-                  app.notify(nirpath, null,plugin.id);
-                  notification.actioned = -1;
+                  }).commit().clear()
+                  delta.addValue(nirpath, null).commit().clear()
+                  notification.actioned = -1
                 }
               }                            
             } catch(e) {
