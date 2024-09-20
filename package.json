@@ -27,7 +27,7 @@
   },
   "homepage": "https://github.com/pdjr-signalk/pdjr-skplugin-sunphases#readme",
   "dependencies": {
-    "signalk-libdelta": "github:pdjr-signalk/signalk-libdelta#typescript",
+    "signalk-libdelta": "github:pdjr-signalk/signalk-libdelta",
     "suncalc": "^1.9.0"
   },
   "directories": {
