@@ -18,8 +18,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const suncalc_1 = require("suncalc");
 const signalk_libdelta_1 = require("signalk-libdelta");
 const PLUGIN_ID = 'sunphases';
-const PLUGIN_NAME = 'pdjr-signalk-sunphases';
-const PLUGIN_DESCRIPTION = 'Inject sunlight phase paths into Signal K';
+const PLUGIN_NAME = 'sunphases';
+const PLUGIN_DESCRIPTION = 'Inject sunlight phase data into Signal K.';
 const PLUGIN_SCHEMA = {
     "type": "object",
     "properties": {
