@@ -18,8 +18,8 @@ import { getTimes, GetTimesResult } from 'suncalc'
 import { Delta } from 'signalk-libdelta'
 
 const PLUGIN_ID: string = 'sunphases'
-const PLUGIN_NAME: string = 'pdjr-signalk-sunphases'
-const PLUGIN_DESCRIPTION: string = 'Inject sunlight phase paths into Signal K'
+const PLUGIN_NAME: string = 'sunphases'
+const PLUGIN_DESCRIPTION: string = 'Inject sunlight phase data into Signal K.'
 const PLUGIN_SCHEMA: object = {
   "type": "object",
   "properties": {

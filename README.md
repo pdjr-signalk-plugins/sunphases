@@ -1,4 +1,4 @@
-# pdjr-skplugin-sunphases
+# sunphases
 
 Inject sunlight phase data into Signal K.
 
@@ -12,7 +12,7 @@ Whatever.
 
 ## Description
 
-__pdjr-skplugin-sunphases__ implements both a sunphase engine and an
+__sunphases__ implements both a sunphase engine and an
 associated notification generator.
 
 The sunphase engine injects sunlight phases (times for sunrise, sunset,
@@ -25,7 +25,7 @@ The notification generator uses a collection of user-defined rules to
 test local time against sunphase data and raise notifications based on
 the result.
 
-A vanilla installation of __pdjr-skplugin-sunphases__ includes a
+A vanilla installation of __sunphases__ includes a
 specimen rule which raises the notification
 'notifications.environment.sunphase.daytime' between dawn and dusk and
 'notifications.environment.sunphases.nighttime' between dusk and dawn.
